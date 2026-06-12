@@ -1,0 +1,12 @@
+services:
+  pf2e-sheet:
+    build: .
+    container_name: pf2e-elhoss-sheet
+    ports:
+      - "8080:8000"
+    volumes:
+      - pf2e_data:/data
+    restart: unless-stopped
+
+volumes:
+  pf2e_data:
