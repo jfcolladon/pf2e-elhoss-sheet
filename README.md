@@ -1,8 +1,8 @@
 # Hoja de Personaje PF2e — Elhoss Eastern Lands
 
-**Versión:** 1.1.0
+**Versión:** 1.2.0
 
-Aplicación web dockerizada de hoja de personaje para **Pathfinder 2e (legacy)**, restringida a **Core Rulebook + Advanced Player's Guide** más las **house rules** de la campaña **Elhoss Eastern Lands** (psiónica salvaje estilo Dark Sun).
+Aplicación web dockerizada de hoja de personaje para **Pathfinder 2e (legacy)**, con contenido **permitido** de los manuales oficiales de la campaña más las **house rules** de **Elhoss Eastern Lands** (psiónica salvaje estilo Dark Sun).
 
 Repositorio: [github.com/jfcolladon/pf2e-elhoss-sheet](https://github.com/jfcolladon/pf2e-elhoss-sheet)
 
@@ -109,7 +109,7 @@ El build queda en `frontend/dist/`; en Docker se copia automáticamente a `stati
 
 ## Características principales
 
-- **Catálogo SRD** (SQLite): feats, conjuros, clases, musas, equipo… filtrado CRB/APG; resto marcado *No permitido* con aprobación DM.
+- **Catálogo SRD** (SQLite): feats, conjuros, clases, musas, rituales, equipo… de los **manuales autorizados** (ver abajo); resto marcado *No permitido* con aprobación DM.
 - **Cálculo automático**: skills, salvaciones, CA, HP, DC de clase, ataques, conjuros, psiónica (PFP).
 - **Bardo**: musa obligatoria; **Multifarious Muse** exige segunda musa; feats/conjuros/skills de musa aplicados automáticamente.
 - **Multiclase caster**: dedications (p. ej. Cleric Dedication) crean fuente de conjuros adicional; Basic/Expert/Master Spellcasting calcula slots.
@@ -119,11 +119,39 @@ El build queda en `frontend/dist/`; en Docker se copia automáticamente a `stati
 
 ---
 
+## Manuales autorizados (sin aprobación DM)
+
+Todo contenido cuyo origen en [Archives of Nethys](https://2e.aonprd.com/) (legacy) provenga de uno de estos libros aparece como **Permitido**:
+
+| Manual | Contenido típico |
+|--------|------------------|
+| Core Rulebook | Clases base, feats, conjuros… |
+| Advanced Player's Guide | Clases avanzadas, arquetipos… |
+| Bestiary / Bestiary 2 / Bestiary 3 | Referencia de criaturas (equipo vinculado si aplica) |
+| Book of the Dead | Undead, archetypes, conjuros… |
+| Dark Archive | Investigator, psychic, thaumaturge… |
+| Gamemastery Guide | Reglas opcionales, ítems GM… |
+| Guns & Gears | Gunslinger, inventors, armas de fuego… |
+| Secrets of Magic | Summoner, magus, rituales… |
+
+PDFs de referencia: [carpeta Rulebooks en Google Drive](https://drive.google.com/drive/u/0/folders/1CveoM7PWlSF8GWE16UltayP_3SzYLin_).
+
+Tras actualizar la app, **reconstruí Docker** para re-sembrar el catálogo con los nuevos `allowed`:
+
+```bash
+docker compose build --no-cache pf2e-sheet
+docker compose up -d
+```
+
+Si ya tenés personajes en el volumen, el build reemplaza el catálogo embebido; al arrancar el contenedor copia la DB nueva si no existe `/data/app.db`. Para **refrescar catálogo sin perder personajes**, ejecutá `backend/etl/refresh_catalog.py` dentro del contenedor o borrá solo las tablas de catálogo como se describe abajo.
+
+---
+
 ## Fuentes de datos
 
 | Fuente | Uso |
 |--------|-----|
-| [Archives of Nethys](https://2e.aonprd.com/) (Elasticsearch legacy) | SRD: CRB + APG |
+| [Archives of Nethys](https://2e.aonprd.com/) (Elasticsearch legacy) | SRD: manuales autorizados (lista arriba) |
 | [House rules Elhoss](https://docs.google.com/document/d/16EmEq9_nEYG6o5xgtyvk1wodVfFIUD4E9Yf4qJuQLkM/edit) | Psiónica, wild talents, ancestries custom |
 | `data/houserules.txt` | Copia local usada en el build Docker |
 

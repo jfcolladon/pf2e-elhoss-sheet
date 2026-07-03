@@ -1,5 +1,6 @@
 import { Link, Outlet } from "react-router-dom";
 import { APP_VERSION } from "./version";
+import { ALLOWED_SOURCES_SHORT } from "./lib/sources";
 
 export default function App() {
   return (
@@ -7,7 +8,7 @@ export default function App() {
       <div className="topbar">
         <h1>PATHFINDER 2E — ELHOSS EASTERN LANDS</h1>
         <span className="muted" style={{ color: "#d8c9a3" }}>
-          Core Rulebook + APG (legacy) + House Rules · v{APP_VERSION}
+          {ALLOWED_SOURCES_SHORT} + House Rules · v{APP_VERSION}
         </span>
         <div className="spacer" />
         <Link to="/">Personajes</Link>

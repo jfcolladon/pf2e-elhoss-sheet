@@ -5,6 +5,7 @@ import { UpdateFn } from "../pages/Sheet";
 import { Section, Modal, CatalogSearch, HouseRulePicker, AllowedBadge } from "../components/common";
 import { AonMarkdown } from "../lib/markdown";
 import { CASTER_DEDICATIONS, detectCaster, museGrant, detectSpellTier, syncFeatEffects, applyMuseSelection, isBard, isMultifariousMuseFeat, needsSecondMuse, maxMuses } from "../lib/rules";
+import { ALLOWED_SOURCES_SHORT } from "../lib/sources";
 import { Character, FeatEntry } from "../types";
 
 const CATEGORIES = [
@@ -247,7 +248,7 @@ export default function FeatsTab({ c, update }: { c: Character; update: UpdateFn
             <>
               {adding === "ancestry" && (
                 <div className="tabs" style={{ marginBottom: 8 }}>
-                  <button className={source === "srd" ? "active" : ""} onClick={() => setSource("srd")}>SRD (CRB/APG)</button>
+                  <button className={source === "srd" ? "active" : ""} onClick={() => setSource("srd")}>SRD (manuales autorizados)</button>
                   <button className={source === "house" ? "active" : ""} onClick={() => setSource("house")}>House Rules de Elhoss</button>
                 </div>
               )}
@@ -274,8 +275,8 @@ export default function FeatsTab({ c, update }: { c: Character; update: UpdateFn
                 />
               )}
               <p className="muted">
-                Los feats fuera de Core Rulebook / APG aparecen como "No permitido": solo se pueden añadir con Modo DM
-                (quedan marcados como aprobados por el DM).
+                Contenido fuera de los manuales autorizados ({ALLOWED_SOURCES_SHORT}) aparece como "No permitido"
+                y solo se puede añadir con Modo DM.
               </p>
             </>
           )}

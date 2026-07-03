@@ -1,5 +1,5 @@
 """Descarga el SRD legacy de Pathfinder 2e desde el Elasticsearch de Archives of Nethys
-y lo guarda en SQLite. Solo Core Rulebook + Advanced Player's Guide quedan marcados
+y lo guarda en SQLite. Los manuales autorizados (ver allowed_sources.py) quedan marcados
 como `allowed`; el resto se conserva para poder habilitarlo con aprobacion del DM."""
 import json
 import sys
@@ -8,15 +8,14 @@ import time
 import httpx
 
 sys.path.insert(0, __import__("os").path.join(__import__("os").path.dirname(__file__), ".."))
+from app.allowed_sources import ALLOWED_SOURCES, is_allowed_source  # noqa: E402
 from app.db import get_conn, init_db  # noqa: E402
 
 ES_URL = "https://elasticsearch.aonprd.com/aon/_search"
 
-ALLOWED_SOURCES = {"core rulebook", "advanced player's guide"}
-
 # Tipos de contenido relevantes para un jugador
 TYPES = [
-    "ancestry", "heritage", "background", "class", "archetype", "feat", "spell",
+    "ancestry", "heritage", "background", "class", "archetype", "feat", "spell", "ritual",
     "action", "skill", "condition", "trait", "item", "class feature", "deity",
 ]
 
@@ -74,9 +73,7 @@ def fetch_type(client: httpx.Client, type_name: str):
 
 def is_allowed(src) -> bool:
     sources = src.get("source") or []
-    if isinstance(sources, str):
-        sources = [sources]
-    return any(s.strip().lower() in ALLOWED_SOURCES for s in sources)
+    return is_allowed_source(sources)
 
 
 def seed_type(conn, client, es_type: str, stored_type: str | None = None):
@@ -124,7 +121,7 @@ def seed_type(conn, client, es_type: str, stored_type: str | None = None):
     )
     conn.commit()
     allowed_n = sum(1 for r in rows if r[6] == 1)
-    print(f"{stored_type} <- {es_type}: {len(rows)} items ({allowed_n} permitidos CRB/APG)")
+    print(f"{stored_type} <- {es_type}: {len(rows)} items ({allowed_n} permitidos / {len(ALLOWED_SOURCES)} manuales)")
     return len(rows)
 
 

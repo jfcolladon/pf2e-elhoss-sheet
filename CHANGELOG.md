@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.2.0] — 2026-07-02
+
+### Añadido
+- **10 manuales autorizados** (sin aprobación DM): Core Rulebook, Advanced Player's Guide, Bestiary 1–3, Book of the Dead, Dark Archive, Gamemastery Guide, Guns & Gears, Secrets of Magic.
+- Lista alineada con la [carpeta de rulebooks de la campaña](https://drive.google.com/drive/u/0/folders/1CveoM7PWlSF8GWE16UltayP_3SzYLin_).
+- Endpoint `GET /api/v1/allowed-sources` y sección en pestaña Reglas.
+- Tipo `ritual` en el catálogo (Secrets of Magic).
+
+### Cambiado
+- ETL re-marca como `allowed` todo contenido de esos manuales en Archives of Nethys legacy.
+
 ## [1.1.0] — 2026-06-11
 
 ### Añadido

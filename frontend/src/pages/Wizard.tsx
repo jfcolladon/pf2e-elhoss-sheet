@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { mod, fmt } from "../lib/calc";
 import { applyClassSelection, applyMuseSelection, isBard } from "../lib/rules";
+import { ALLOWED_SOURCES_SHORT } from "../lib/sources";
 import { Section, CatalogSearch, AllowedBadge } from "../components/common";
 import {
   ABILITY_LABELS, AbilityKey, Character, defaultCharacter, KnownPower, PsionicPower,
@@ -213,7 +214,7 @@ export default function Wizard() {
       )}
 
       {step === 2 && (
-        <Section title="Paso 3 — Ancestry (custom de Elhoss o CRB/APG)">
+        <Section title={`Paso 3 — Ancestry (custom de Elhoss o ${ALLOWED_SOURCES_SHORT})`}>
           <p className="muted">
             House rule: si la ancestry otorga boosts libres, recibe uno menos de lo normal. Tope 18.
           </p>
@@ -238,7 +239,7 @@ export default function Wizard() {
               </div>
             ))}
           </div>
-          <h4>Ancestrías del SRD (CRB/APG legacy)</h4>
+          <h4>Ancestrías del SRD (manuales autorizados)</h4>
           <CatalogSearch
             type="ancestry"
             dmMode={c.dmMode}
@@ -311,7 +312,7 @@ export default function Wizard() {
       )}
 
       {step === 4 && (
-        <Section title="Paso 5 — Clase (CRB/APG o Psiónico de Elhoss)">
+        <Section title="Paso 5 — Clase (manuales autorizados o Psiónico de Elhoss)">
           <div className="char-card" style={{ marginBottom: 12 }}>
             <b>Psiónico (house rule de Elhoss)</b>
             <span className="muted">
@@ -320,7 +321,7 @@ export default function Wizard() {
             </span>
             <PsionicClassPicker c={c} setC={setC} applyBoost={applyBoost} />
           </div>
-          <h4>Clases del SRD (CRB/APG legacy)</h4>
+          <h4>Clases del SRD (manuales autorizados)</h4>
           <CatalogSearch
             type="class"
             dmMode={c.dmMode}

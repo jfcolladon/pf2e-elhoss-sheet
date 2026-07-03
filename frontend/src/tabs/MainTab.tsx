@@ -8,6 +8,7 @@ import {
 } from "../lib/calc";
 import { ABILITY_LABELS, AbilityKey, Character, Strike } from "../types";
 import { applyClassSelection, applyMuseSelection, isBard, needsSecondMuse } from "../lib/rules";
+import { ALLOWED_SOURCES_SHORT } from "../lib/sources";
 
 const ABILITIES: AbilityKey[] = ["str", "dex", "con", "int", "wis", "cha"];
 
@@ -387,7 +388,7 @@ export default function MainTab({ c, update }: { c: Character; update: UpdateFn 
                   setPick(null);
                 }}
               />
-              <h4 style={{ marginTop: 12 }}>SRD legacy (CRB / APG)</h4>
+              <h4 style={{ marginTop: 12 }}>SRD legacy ({ALLOWED_SOURCES_SHORT})</h4>
             </>
           )}
           {(pick === "ancestry" || pick === "heritage" || pick === "background") && (

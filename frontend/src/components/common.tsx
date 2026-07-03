@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { api } from "../api";
 import { AonMarkdown } from "../lib/markdown";
+import { ALLOWED_SOURCES_SHORT } from "../lib/sources";
 import { CatalogBrief, ProfRank, RANK_LABELS } from "../types";
 
 export function Section({ title, extra, children }: { title: string; extra?: ReactNode; children: ReactNode }) {
@@ -131,7 +132,7 @@ export function CatalogSearch({
         />
         <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <input type="checkbox" checked={onlyAllowed} onChange={(e) => setOnlyAllowed(e.target.checked)} />
-          Solo permitido (CRB/APG)
+          Solo permitido ({ALLOWED_SOURCES_SHORT})
         </label>
       </div>
       <div className="search-results">

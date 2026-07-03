@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import { Section } from "../components/common";
+import { ALLOWED_SOURCE_LABELS, ALLOWED_SOURCES_DRIVE } from "../lib/sources";
 
 export default function RulesTab() {
   const [sections, setSections] = useState<Awaited<ReturnType<typeof api.houserules>>>([]);
@@ -15,10 +16,22 @@ export default function RulesTab() {
   return (
     <div className="grid cols-2">
       <div>
+        <Section title="Manuales autorizados (SRD)">
+          <p className="muted">
+            Todo contenido de estos manuales aparece como <b>Permitido</b> sin aprobación del DM.
+            Lista alineada con la carpeta de rulebooks de la campaña.
+          </p>
+          <ul style={{ margin: "8px 0", paddingLeft: 20 }}>
+            {ALLOWED_SOURCE_LABELS.map((l) => <li key={l}>{l}</li>)}
+          </ul>
+          <p className="muted">
+            <a href={ALLOWED_SOURCES_DRIVE} target="_blank" rel="noreferrer">Carpeta de rulebooks (Google Drive)</a>
+          </p>
+        </Section>
         <Section title="House Rules — Elhoss Eastern Lands">
           <p className="muted">
             Fuente única de house rules: el documento de campaña del DM. Lo que no esté aquí ni en
-            Core Rulebook / APG (legacy) no está permitido sin aprobación del DM.
+            los manuales autorizados arriba requiere aprobación del DM.
           </p>
           {sections.map((s) => (
             <div key={s.id} className="search-row" onClick={async () => {

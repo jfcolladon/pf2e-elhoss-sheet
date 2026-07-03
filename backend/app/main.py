@@ -6,9 +6,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from .allowed_sources import ALLOWED_SOURCE_LABELS, ALLOWED_SOURCES_SUMMARY
 from .db import get_conn, init_db
 
-app = FastAPI(title="Hoja de Personaje PF2e - Elhoss", version="1.1.0")
+app = FastAPI(title="Hoja de Personaje PF2e - Elhoss", version="1.2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -22,6 +23,7 @@ init_db()
 TYPE_ALIASES = {
     "ancestry": "ancestry", "heritage": "heritage", "background": "background",
     "class": "class", "archetype": "archetype", "feat": "feat", "spell": "spell",
+    "ritual": "ritual",
     "action": "action", "skill": "skill", "condition": "condition", "trait": "trait",
     "item": "item", "equipment": "item", "class-feature": "class feature", "deity": "deity",
     "class-option": "class-option",
@@ -265,9 +267,21 @@ def delete_character(cid: int):
 def health():
     conn = get_conn()
     n = conn.execute("SELECT COUNT(*) c FROM srd_items").fetchone()["c"]
+    allowed = conn.execute("SELECT COUNT(*) c FROM srd_items WHERE allowed=1").fetchone()["c"]
     p = conn.execute("SELECT COUNT(*) c FROM psionic_powers").fetchone()["c"]
     conn.close()
-    return {"status": "ok", "srd_items": n, "psionic_powers": p}
+    return {
+        "status": "ok",
+        "version": app.version,
+        "srd_items": n,
+        "srd_items_allowed": allowed,
+        "psionic_powers": p,
+    }
+
+
+@app.get("/api/v1/allowed-sources")
+def allowed_sources():
+    return {"labels": ALLOWED_SOURCE_LABELS, "summary": ALLOWED_SOURCES_SUMMARY}
 
 
 # ---------------- Frontend estatico ----------------
