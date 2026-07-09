@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.3.0] — 2026-07-08
+
+### Añadido
+- **Pestaña Campaña**: cuaderno de notas de campaña con categorías (Personajes, Lugares, Facciones, Rumores, Notas, Varios).
+- Tarjetas de notas con título, contenido, etiquetas y opción de fijar (`📌`).
+- Filtrado por categoría, búsqueda de texto libre y ordenamiento (fijadas primero, luego por fecha).
+- Modal de creación/edición de notas con selector de categoría visual.
+- Las notas se almacenan en el personaje (campo `campaignNotes`) y se auto-guardan como el resto de datos.
+
 ## [1.2.0] — 2026-07-02
 
 ### Añadido

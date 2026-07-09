@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from .allowed_sources import ALLOWED_SOURCE_LABELS, ALLOWED_SOURCES_SUMMARY
 from .db import get_conn, init_db
 
-app = FastAPI(title="Hoja de Personaje PF2e - Elhoss", version="1.2.0")
+app = FastAPI(title="Hoja de Personaje PF2e - Elhoss", version="1.3.0")
 
 app.add_middleware(
     CORSMiddleware,

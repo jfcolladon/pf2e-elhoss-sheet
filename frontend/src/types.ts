@@ -112,6 +112,18 @@ export interface InventoryItem {
   note: string;
 }
 
+export type NoteCategory = "npc" | "location" | "faction" | "rumor" | "note" | "other";
+
+export interface CampaignNote {
+  id: string;           // uuid local
+  category: NoteCategory;
+  title: string;
+  content: string;
+  tags: string[];
+  pinned: boolean;
+  createdAt: string;    // ISO date
+}
+
 export interface Character {
   id?: number;
   name: string;
@@ -171,6 +183,7 @@ export interface Character {
   money: { cp: number; sp: number; gp: number; pp: number };
   conditions: string[];
   notes: string;
+  campaignNotes: CampaignNote[];
   dmMode: boolean;
 }
 
@@ -241,6 +254,7 @@ export function defaultCharacter(): Character {
     money: { cp: 0, sp: 0, gp: 0, pp: 0 },
     conditions: [],
     notes: "",
+    campaignNotes: [],
     dmMode: false,
   };
 }

@@ -236,7 +236,102 @@ details.power-card { border: 1px solid var(--line); border-radius: 6px; margin-b
 details.power-card > summary { padding: 6px 10px; cursor: pointer; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 details.power-card .pc-body { padding: 8px 12px; border-top: 1px solid var(--line); white-space: pre-wrap; }
 
+/* ── Notes Tab ──────────────────────────────────────────────────── */
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.note-card {
+  background: #fffdf6;
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--accent);
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.note-card-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+
+.note-cat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.note-title {
+  margin: 0;
+  font-size: 1rem;
+  font-family: 'Cinzel', serif;
+  color: var(--accent);
+  word-break: break-word;
+}
+
+.note-content {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #3a2a14;
+  white-space: pre-wrap;
+  word-break: break-word;
+  flex: 1;
+}
+
+.note-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.note-date {
+  font-size: 11px;
+  text-align: right;
+  margin-top: 4px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 15px;
+  opacity: 0.7;
+  border-radius: 4px;
+  transition: opacity .15s, background .15s;
+}
+.icon-btn:hover { opacity: 1; background: rgba(0,0,0,.07); }
+.icon-btn.danger:hover { background: #fde4d8; }
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 6px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: filter .15s;
+}
+.btn-primary:hover { filter: brightness(1.15); }
+
 @media (max-width: 860px) {
   .cols-3, .cols-4, .cols-6 { grid-template-columns: 1fr 1fr; }
   .cols-2 { grid-template-columns: 1fr; }
+  .notes-grid { grid-template-columns: 1fr; }
 }

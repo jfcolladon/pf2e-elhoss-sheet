@@ -9,10 +9,11 @@ import SpellsTab from "../tabs/SpellsTab";
 import PsionicsTab from "../tabs/PsionicsTab";
 import InventoryTab from "../tabs/InventoryTab";
 import RulesTab from "../tabs/RulesTab";
+import NotesTab from "../tabs/NotesTab";
 
 export type UpdateFn = (mutator: (c: Character) => Character) => void;
 
-const TABS = ["Principal", "Skills", "Feats", "Conjuros", "Psiónica", "Inventario", "House Rules"];
+const TABS = ["Principal", "Skills", "Feats", "Conjuros", "Psiónica", "Inventario", "Campaña", "House Rules"];
 
 export default function Sheet() {
   const { id } = useParams();
@@ -30,6 +31,7 @@ export default function Sheet() {
       merged.psionics = { ...defaultCharacter().psionics, ...data.psionics };
       merged.muses = data.muses ?? [];
       merged.extraCasters = data.extraCasters ?? [];
+      merged.campaignNotes = data.campaignNotes ?? [];
       // compat: si no hay atributo de conjuro guardado, hereda el de la clase
       if (!data.spellcasting?.ability) merged.spellcasting.ability = merged.clazz.keyAbility;
       if (!data.spellcasting?.tradition) merged.spellcasting.tradition = merged.clazz.tradition;
@@ -88,7 +90,8 @@ export default function Sheet() {
       {tab === 3 && <SpellsTab c={c} update={update} />}
       {tab === 4 && <PsionicsTab c={c} update={update} />}
       {tab === 5 && <InventoryTab c={c} update={update} />}
-      {tab === 6 && <RulesTab />}
+      {tab === 6 && <NotesTab c={c} update={update} />}
+      {tab === 7 && <RulesTab />}
     </div>
   );
 }
