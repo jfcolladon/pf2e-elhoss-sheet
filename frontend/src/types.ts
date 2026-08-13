@@ -222,6 +222,7 @@ export interface Character {
   };
   inventory: InventoryItem[];
   money: ElhossMoney;
+  languages: string[];
   conditions: string[];
   notes: string;
   campaignNotes: CampaignNote[];
@@ -294,6 +295,7 @@ export function defaultCharacter(): Character {
     },
     inventory: [],
     money: { thalore: 0, orivan: 0, thalmar: 0, syran: 0, syri: 0, ran: 0 },
+    languages: ["Common"],
     conditions: [],
     notes: "",
     campaignNotes: [],

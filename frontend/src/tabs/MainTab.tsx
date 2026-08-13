@@ -10,6 +10,10 @@ import { ABILITY_LABELS, AbilityKey, Character, Strike } from "../types";
 import { applyClassSelection, applyMuseSelection, isBard, needsSecondMuse } from "../lib/rules";
 import { encodePortrait } from "../lib/portrait";
 import { ALLOWED_SOURCES_SHORT } from "../lib/sources";
+import {
+  ALL_LANGUAGE_SUGGESTIONS, ELHOSS_LANGUAGES,
+  languagesFromAncestryData, withAncestryLanguages,
+} from "../lib/languages";
 
 const ABILITIES: AbilityKey[] = ["str", "dex", "con", "int", "wis", "cha"];
 
@@ -130,6 +134,8 @@ export default function MainTab({ c, update }: { c: Character; update: UpdateFn 
           <PortraitBox c={c} update={update} />
           </div>
         </Section>
+
+        <LanguageSection c={c} update={update} />
 
         <Section title="Características">
           <div className="grid cols-6">
@@ -380,14 +386,14 @@ export default function MainTab({ c, update }: { c: Character; update: UpdateFn 
                 onPick={(entry) => {
                   if (pick === "ancestry") {
                     const d = entry.data || {};
-                    update((o) => ({
+                    update((o) => withAncestryLanguages({
                       ...o,
                       ancestry: {
                         uid: null, name: entry.title,
                         hp: Number(d.hp ?? o.ancestry.hp), speed: Number(d.speed ?? o.ancestry.speed),
                         size: String(d.size ?? o.ancestry.size), custom: true,
                       },
-                    }));
+                    }, languagesFromAncestryData(d)));
                   } else {
                     update((o) => ({ ...o, heritage: { uid: null, name: entry.title } }));
                   }
@@ -408,13 +414,13 @@ export default function MainTab({ c, update }: { c: Character; update: UpdateFn 
                 const rawSpeed = full.speed as number | { land?: number } | undefined;
                 const sp = typeof rawSpeed === "number" ? rawSpeed : rawSpeed?.land ?? (full.speed_raw ? parseInt(String(full.speed_raw)) : 25);
                 const rawSize = full.size as string[] | string | undefined;
-                update((o) => ({
+                update((o) => withAncestryLanguages({
                   ...o,
                   ancestry: {
                     uid: item.uid, name: item.name, hp: Number(full.hp ?? 8),
                     speed: Number(sp) || 25, size: Array.isArray(rawSize) ? rawSize[0] : (rawSize ?? "Medium"), custom: false,
                   },
-                }));
+                }, languagesFromAncestryData(full)));
               } else if (pick === "heritage") {
                 update((o) => ({ ...o, heritage: { uid: item.uid, name: item.name } }));
               } else {
@@ -506,6 +512,67 @@ function StrikeRow({ c, s, onChange, onDelete }: {
         <button className="small ghost" onClick={onDelete}>Eliminar strike</button>
       </div>
     </details>
+  );
+}
+
+function LanguageSection({ c, update }: { c: Character; update: UpdateFn }) {
+  const [q, setQ] = useState("");
+  const extra = Math.max(0, abilityMod(c, "int"));
+  const known = c.languages ?? [];
+  const knownLower = new Set(known.map((x) => x.toLowerCase()));
+
+  const add = (name: string) => {
+    const n = name.trim();
+    if (!n) return;
+    update((o) => withAncestryLanguages(o, [n]));
+    setQ("");
+  };
+
+  const remove = (name: string) => {
+    update((o) => ({ ...o, languages: (o.languages ?? []).filter((x) => x.toLowerCase() !== name.toLowerCase()) }));
+  };
+
+  return (
+    <Section title="Idiomas" extra={
+      <span style={{ fontFamily: "inherit", textTransform: "none", letterSpacing: 0, fontWeight: 500, fontSize: 12, opacity: 0.9 }}>
+        INT {extra > 0 ? `+${extra} idiomas adicionales` : "sin idiomas extra"}
+      </span>
+    }>
+      <div className="lang-chips">
+        {known.length === 0 && <span className="muted">Ningún idioma. Añadí Common u otro de Elhoss.</span>}
+        {known.map((name) => (
+          <span key={name} className="chip">
+            {name}
+            <button type="button" className="icon-btn" title="Quitar" onClick={() => remove(name)}>✕</button>
+          </span>
+        ))}
+      </div>
+      <div className="row" style={{ marginTop: 8 }}>
+        <input
+          list="elhoss-languages"
+          style={{ flex: 1, minWidth: 160 }}
+          placeholder="Añadir idioma…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(q); } }}
+        />
+        <datalist id="elhoss-languages">
+          {ALL_LANGUAGE_SUGGESTIONS.filter((n) => !knownLower.has(n.toLowerCase())).map((n) => (
+            <option key={n} value={n} />
+          ))}
+        </datalist>
+        <button type="button" className="small" onClick={() => add(q)}>Añadir</button>
+      </div>
+      <div className="lang-suggest">
+        {ELHOSS_LANGUAGES.filter((n) => !knownLower.has(n.toLowerCase())).map((n) => (
+          <button key={n} type="button" className="small ghost" onClick={() => add(n)}>{n}</button>
+        ))}
+      </div>
+      <p className="muted" style={{ marginTop: 8 }}>
+        Elhoss: Common, idiomas regionales (Telian, Ushamita, Ramanan, Daxican…) y de ancestría (Dwrvin, Yolquipan, K'rryl, Mercaderes de las Dunas).
+        Elegir ancestría agrega los idiomas de casa. Podés escribir uno custom.
+      </p>
+    </Section>
   );
 }
 

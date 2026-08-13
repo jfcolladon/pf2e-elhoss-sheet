@@ -34,6 +34,7 @@ export default function Sheet() {
       merged.campaignNotes = data.campaignNotes ?? [];
       merged.portrait = data.portrait ?? "";
       merged.money = migrateMoney(data.money);
+      merged.languages = data.languages ?? ["Common"];
       // compat: si no hay atributo de conjuro guardado, hereda el de la clase
       if (!data.spellcasting?.ability) merged.spellcasting.ability = merged.clazz.keyAbility;
       if (!data.spellcasting?.tradition) merged.spellcasting.tradition = merged.clazz.tradition;

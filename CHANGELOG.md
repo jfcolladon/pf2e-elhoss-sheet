@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0] — 2026-08-12
+
+### Añadido
+- **Idiomas** en la pestaña Principal: chips, lista de Elhoss (Common, Telian, Ushamita, Ramanan, Daxican, Dwrvin, Yolquipan, K'rryl, Mercaderes de las Dunas, Halfling) y sugerencias SRD.
+- Elegir ancestría (house rules o SRD) agrega sus idiomas de partida. INT muestra cuántos idiomas adicionales corresponden.
+- El asistente de creación también aplica y resume idiomas.
+
 ## [1.7.0] — 2026-08-12
 
 ### Cambiado

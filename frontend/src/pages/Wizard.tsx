@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { mod, fmt } from "../lib/calc";
 import { applyClassSelection, applyMuseSelection, isBard } from "../lib/rules";
+import { languagesFromAncestryData, parseLanguageList, withAncestryLanguages } from "../lib/languages";
 import { ALLOWED_SOURCES_SHORT } from "../lib/sources";
 import { Section, CatalogSearch, AllowedBadge } from "../components/common";
 import {
@@ -226,11 +227,15 @@ export default function Wizard() {
                 <span className="muted">
                   HP {a.hp} · {a.size} · {a.speed} ft · {a.vision} · Boosts: {a.boosts.join(", ")}
                   {a.flaw ? ` · Flaw: ${a.flaw}` : ""}
+                  {a.languages ? ` · Idiomas: ${a.languages}` : ""}
                 </span>
                 <button
                   className="small"
                   onClick={() => {
-                    up({ ancestry: { uid: null, name: a.name, hp: a.hp, speed: a.speed, size: a.size, custom: true } });
+                    setC((old) => withAncestryLanguages({
+                      ...old,
+                      ancestry: { uid: null, name: a.name, hp: a.hp, speed: a.speed, size: a.size, custom: true },
+                    }, parseLanguageList(a.languages)));
                     setAncestryBoostsApplied(false);
                   }}
                 >
@@ -251,13 +256,14 @@ export default function Wizard() {
                 typeof rawSpeed === "number" ? rawSpeed :
                 rawSpeed?.land ?? (full.speed_raw ? parseInt(String(full.speed_raw)) : 25);
               const rawSize = full.size as string[] | string | undefined;
-              up({
+              up(withAncestryLanguages({
+                ...c,
                 ancestry: {
                   uid: item.uid, name: item.name,
                   hp: Number(full.hp ?? 8), speed: Number(speed) || 25,
                   size: Array.isArray(rawSize) ? rawSize[0] : (rawSize ?? "Medium"), custom: false,
                 },
-              });
+              }, languagesFromAncestryData(full)));
               setAncestryBoostsApplied(false);
             }}
           />
@@ -432,6 +438,10 @@ export default function Wizard() {
               <tr>
                 <td><b>HP iniciales</b></td>
                 <td>{c.ancestry.hp + c.clazz.hpPerLevel + mod(c.abilities.con)}</td>
+              </tr>
+              <tr>
+                <td><b>Idiomas</b></td>
+                <td>{(c.languages ?? []).join(", ") || "—"}</td>
               </tr>
               <tr>
                 <td><b>Wild Talents</b></td>
