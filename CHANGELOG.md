@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.8.1] — 2026-08-12
+
+### Cambiado
+- El idioma común de Elhoss es el **Lenguaje de los Mercaderes de las Dunas**. Se elimina Common de Golarion.
+- Personajes que tenían Common lo convierten al idioma de los mercaderes (sin duplicar).
+
 ## [1.8.0] — 2026-08-12
 
 ### Añadido

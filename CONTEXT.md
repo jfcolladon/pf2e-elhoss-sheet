@@ -40,7 +40,7 @@ Todo contenido fuera de esos manuales aparece como "No permitido" con checkbox d
 d:\Pathfinder personaje\
 ├── Dockerfile              # 3 etapas: frontend build → seed DB → imagen final
 ├── docker-compose.yml      # puerto 8080:8000, volumen pf2e_data:/data
-├── VERSION                 # 1.8.0
+├── VERSION                 # 1.8.1
 ├── CHANGELOG.md
 ├── README.md
 ├── data/
@@ -48,7 +48,7 @@ d:\Pathfinder personaje\
 ├── backend/
 │   ├── requirements.txt    # fastapi 0.115.12 · uvicorn 0.34.2 · httpx 0.28.1
 │   ├── app/
-│   │   ├── main.py         # FastAPI app (version="1.8.0"), endpoints REST + sirve /static
+│   │   ├── main.py         # FastAPI app (version="1.8.1"), endpoints REST + sirve /static
 │   │   ├── db.py           # SQLite schema + get_conn()
 │   │   ├── allowed_sources.py  # ALLOWED_SOURCES frozenset (10 manuales)
 │   │   └── __init__.py
@@ -58,7 +58,7 @@ d:\Pathfinder personaje\
 │       ├── refresh_catalog.py  # Re-copia tablas catalog desde /seed/app.db al volumen persistente (sin tocar characters)
 │       └── __init__.py
 └── frontend/
-    ├── package.json        # pf2e-elhoss-sheet v1.8.0 · React 18 · Vite 5 · TypeScript
+    ├── package.json        # pf2e-elhoss-sheet v1.8.1 · React 18 · Vite 5 · TypeScript
     ├── vite.config.ts      # proxy /api → localhost:8000
     ├── index.html          # Google Fonts: Cinzel + Crimson Text
     └── src/
@@ -66,7 +66,7 @@ d:\Pathfinder personaje\
         ├── App.tsx             # Layout: topbar (versión + manuales autorizados) + <Outlet>
         ├── api.ts              # Cliente HTTP: catalog, houserules, character CRUD
         ├── types.ts            # Interfaces TS: Character, CampaignNote, FeatEntry, etc.
-        ├── version.ts          # APP_VERSION = "1.8.0"
+        ├── version.ts          # APP_VERSION = "1.8.1"
         ├── styles.css          # Tema PF2e (colores Cinzel/parchment), nota-cards, etc.
         ├── pages/
         │   ├── CharacterList.tsx   # Lista de personajes
@@ -244,7 +244,7 @@ cd backend && uvicorn app.main:app --reload  # requiere: pip install -r requirem
 
 - **Repositorio:** https://github.com/jfcolladon/pf2e-elhoss-sheet (público)
 - **Rama:** `master`
-- **Versión actual:** `1.8.0`
+- **Versión actual:** `1.8.1`
 - Los archivos de versión son: `VERSION`, `frontend/package.json`, `frontend/src/version.ts`, `backend/app/main.py` (parámetro `version=` del FastAPI constructor).
 - Al subir versión, actualizar los 4 archivos + entrada en `CHANGELOG.md`.
 
@@ -261,6 +261,7 @@ cd backend && uvicorn app.main:app --reload  # requiere: pip install -r requirem
 | 1.6.1 | 2026-08-12 | Thalmar (grafía), Talore, nombres solo Elhoss |
 | 1.7.0 | 2026-08-12 | Moneda Thalan'dorœ: Thaloré / Orivan / Thalmar / Syran / Syri / Ran |
 | 1.8.0 | 2026-08-12 | Idiomas en Principal (Elhoss + SRD, ancestría los otorga) |
+| 1.8.1 | 2026-08-12 | Común = Lenguaje de los Mercaderes de las Dunas (sin Common) |
 
 ---
 

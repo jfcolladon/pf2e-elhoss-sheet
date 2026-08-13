@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../api";
 import { Character, defaultCharacter, migrateMoney } from "../types";
+import { migrateLanguages } from "../lib/languages";
 import MainTab from "../tabs/MainTab";
 import SkillsTab from "../tabs/SkillsTab";
 import FeatsTab from "../tabs/FeatsTab";
@@ -34,7 +35,7 @@ export default function Sheet() {
       merged.campaignNotes = data.campaignNotes ?? [];
       merged.portrait = data.portrait ?? "";
       merged.money = migrateMoney(data.money);
-      merged.languages = data.languages ?? ["Common"];
+      merged.languages = migrateLanguages(data.languages);
       // compat: si no hay atributo de conjuro guardado, hereda el de la clase
       if (!data.spellcasting?.ability) merged.spellcasting.ability = merged.clazz.keyAbility;
       if (!data.spellcasting?.tradition) merged.spellcasting.tradition = merged.clazz.tradition;

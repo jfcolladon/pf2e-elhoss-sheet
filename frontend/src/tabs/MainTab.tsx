@@ -539,7 +539,7 @@ function LanguageSection({ c, update }: { c: Character; update: UpdateFn }) {
       </span>
     }>
       <div className="lang-chips">
-        {known.length === 0 && <span className="muted">Ningún idioma. Añadí Common u otro de Elhoss.</span>}
+        {known.length === 0 && <span className="muted">Ningún idioma. Añadí el de los Mercaderes de las Dunas u otro de Elhoss.</span>}
         {known.map((name) => (
           <span key={name} className="chip">
             {name}
@@ -569,8 +569,7 @@ function LanguageSection({ c, update }: { c: Character; update: UpdateFn }) {
         ))}
       </div>
       <p className="muted" style={{ marginTop: 8 }}>
-        Elhoss: Common, idiomas regionales (Telian, Ushamita, Ramanan, Daxican…) y de ancestría (Dwrvin, Yolquipan, K'rryl, Mercaderes de las Dunas).
-        Elegir ancestría agrega los idiomas de casa. Podés escribir uno custom.
+        Elhoss: el idioma común es el Lenguaje de los Mercaderes de las Dunas. Regionales: Telian, Ushamita, Ramanan, Daxican. Ancestría: Dwrvin, Yolquipan, K'rryl, Halfling.
       </p>
     </Section>
   );
