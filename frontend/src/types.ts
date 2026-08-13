@@ -134,6 +134,7 @@ export interface Character {
   xp: number;
   level: number;
   heroPoints: number;
+  portrait: string; // data URL JPEG recortado; vacío si no hay imagen
   ancestry: { uid: string | null; name: string; hp: number; speed: number; size: string; custom: boolean };
   heritage: { uid: string | null; name: string };
   background: { uid: string | null; name: string };
@@ -221,6 +222,7 @@ export function defaultCharacter(): Character {
   for (const s of SKILLS) skills[s.key] = { rank: 0, item: 0 };
   return {
     name: "", player: "", xp: 0, level: 1, heroPoints: 1,
+    portrait: "",
     ancestry: { uid: null, name: "", hp: 8, speed: 25, size: "Medium", custom: false },
     heritage: { uid: null, name: "" },
     background: { uid: null, name: "" },

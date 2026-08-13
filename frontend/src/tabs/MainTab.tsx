@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
 import { UpdateFn } from "../pages/Sheet";
 import { Section, Teml, Modal, CatalogSearch, HouseRulePicker, PipTracker, Counter } from "../components/common";
@@ -8,6 +8,7 @@ import {
 } from "../lib/calc";
 import { ABILITY_LABELS, AbilityKey, Character, Strike } from "../types";
 import { applyClassSelection, applyMuseSelection, isBard, needsSecondMuse } from "../lib/rules";
+import { encodePortrait } from "../lib/portrait";
 import { ALLOWED_SOURCES_SHORT } from "../lib/sources";
 
 const ABILITIES: AbilityKey[] = ["str", "dex", "con", "int", "wis", "cha"];
@@ -25,6 +26,7 @@ export default function MainTab({ c, update }: { c: Character; update: UpdateFn 
     <div className="grid cols-2">
       <div>
         <Section title="Identidad">
+          <div className="identity-layout">
           <div className="grid cols-3">
             <div className="field"><label>Nombre</label>
               <input value={c.name} onChange={(e) => update((o) => ({ ...o, name: e.target.value }))} /></div>
@@ -124,6 +126,8 @@ export default function MainTab({ c, update }: { c: Character; update: UpdateFn 
                 )}
               </div>
             </div>
+          </div>
+          <PortraitBox c={c} update={update} />
           </div>
         </Section>
 
@@ -502,5 +506,64 @@ function StrikeRow({ c, s, onChange, onDelete }: {
         <button className="small ghost" onClick={onDelete}>Eliminar strike</button>
       </div>
     </details>
+  );
+}
+
+function PortraitBox({ c, update }: { c: Character; update: UpdateFn }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  const onFile = async (file: File | undefined) => {
+    if (!file) return;
+    setErr("");
+    setBusy(true);
+    try {
+      const dataUrl = await encodePortrait(file);
+      update((o) => ({ ...o, portrait: dataUrl }));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "No se pudo cargar la imagen.");
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  return (
+    <div className="portrait-col">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(e) => onFile(e.target.files?.[0])}
+      />
+      <button
+        type="button"
+        className="portrait-frame"
+        title={c.portrait ? "Cambiar retrato" : "Cargar retrato"}
+        onClick={() => inputRef.current?.click()}
+        disabled={busy}
+      >
+        {c.portrait ? (
+          <img src={c.portrait} alt={`Retrato de ${c.name || "personaje"}`} />
+        ) : (
+          <span className="portrait-placeholder">
+            {busy ? "Procesando…" : "Retrato"}
+          </span>
+        )}
+      </button>
+      <div className="portrait-actions">
+        <button type="button" className="small ghost" onClick={() => inputRef.current?.click()} disabled={busy}>
+          {c.portrait ? "Cambiar" : "Cargar"}
+        </button>
+        {c.portrait && (
+          <button type="button" className="small ghost" onClick={() => update((o) => ({ ...o, portrait: "" }))}>
+            Quitar
+          </button>
+        )}
+      </div>
+      {err && <span className="warn">{err}</span>}
+    </div>
   );
 }

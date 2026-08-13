@@ -32,6 +32,7 @@ export default function Sheet() {
       merged.muses = data.muses ?? [];
       merged.extraCasters = data.extraCasters ?? [];
       merged.campaignNotes = data.campaignNotes ?? [];
+      merged.portrait = data.portrait ?? "";
       // compat: si no hay atributo de conjuro guardado, hereda el de la clase
       if (!data.spellcasting?.ability) merged.spellcasting.ability = merged.clazz.keyAbility;
       if (!data.spellcasting?.tradition) merged.spellcasting.tradition = merged.clazz.tradition;
@@ -60,6 +61,9 @@ export default function Sheet() {
   return (
     <div>
       <div className="row" style={{ marginBottom: 10 }}>
+        {c.portrait && (
+          <img className="sheet-portrait-mini" src={c.portrait} alt="" />
+        )}
         <h2>{c.name || "Sin nombre"}</h2>
         <span className="muted">
           {c.ancestry.name} {c.background.name} {c.clazz.name} — nivel {c.level}

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0] — 2026-08-12
+
+### Añadido
+- **Retrato del personaje** en la pestaña Principal (marco 152×200, proporción 3:4, recorte `cover`).
+- Miniatura junto al nombre en la barra de la hoja.
+- La imagen se redimensiona y comprime en el navegador (máx. 360×480 JPEG) antes de guardarse con el personaje.
+
 ## [1.4.0] — 2026-08-12
 
 ### Añadido
