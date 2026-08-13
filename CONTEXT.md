@@ -40,7 +40,7 @@ Todo contenido fuera de esos manuales aparece como "No permitido" con checkbox d
 d:\Pathfinder personaje\
 ├── Dockerfile              # 3 etapas: frontend build → seed DB → imagen final
 ├── docker-compose.yml      # puerto 8080:8000, volumen pf2e_data:/data
-├── VERSION                 # 1.3.0
+├── VERSION                 # 1.4.0
 ├── CHANGELOG.md
 ├── README.md
 ├── data/
@@ -48,7 +48,7 @@ d:\Pathfinder personaje\
 ├── backend/
 │   ├── requirements.txt    # fastapi 0.115.12 · uvicorn 0.34.2 · httpx 0.28.1
 │   ├── app/
-│   │   ├── main.py         # FastAPI app (version="1.3.0"), endpoints REST + sirve /static
+│   │   ├── main.py         # FastAPI app (version="1.4.0"), endpoints REST + sirve /static
 │   │   ├── db.py           # SQLite schema + get_conn()
 │   │   ├── allowed_sources.py  # ALLOWED_SOURCES frozenset (10 manuales)
 │   │   └── __init__.py
@@ -58,7 +58,7 @@ d:\Pathfinder personaje\
 │       ├── refresh_catalog.py  # Re-copia tablas catalog desde /seed/app.db al volumen persistente (sin tocar characters)
 │       └── __init__.py
 └── frontend/
-    ├── package.json        # pf2e-elhoss-sheet v1.3.0 · React 18 · Vite 5 · TypeScript
+    ├── package.json        # pf2e-elhoss-sheet v1.4.0 · React 18 · Vite 5 · TypeScript
     ├── vite.config.ts      # proxy /api → localhost:8000
     ├── index.html          # Google Fonts: Cinzel + Crimson Text
     └── src/
@@ -66,7 +66,7 @@ d:\Pathfinder personaje\
         ├── App.tsx             # Layout: topbar (versión + manuales autorizados) + <Outlet>
         ├── api.ts              # Cliente HTTP: catalog, houserules, character CRUD
         ├── types.ts            # Interfaces TS: Character, CampaignNote, FeatEntry, etc.
-        ├── version.ts          # APP_VERSION = "1.3.0"
+        ├── version.ts          # APP_VERSION = "1.4.0"
         ├── styles.css          # Tema PF2e (colores Cinzel/parchment), nota-cards, etc.
         ├── pages/
         │   ├── CharacterList.tsx   # Lista de personajes
@@ -86,6 +86,7 @@ d:\Pathfinder personaje\
         └── lib/
             ├── calc.ts     # Derivados: mod atributo, proficiencia, AC, HP, saves, skills, conjuros, psiónica
             ├── rules.ts    # CLASS_PROFILES, applyClassSelection, musas (applyMuseSelection, syncFeatEffects)
+            ├── prereqs.ts  # Parser/evaluador de prerrequisitos de feats (skills, atributos, musas, dedications)
             ├── sources.ts  # ALLOWED_SOURCE_LABELS, ALLOWED_SOURCES_SHORT, ALLOWED_SOURCES_DRIVE
             └── markdown.tsx # Renderiza texto AoN con tags custom → HTML
 ```
@@ -193,7 +194,7 @@ Character {
 - **`applyMuseSelection(c, museName)`**: aplica efectos de musa de Bardo (feats, conjuros, skills, lores). Máximo 2 musas si tiene Multifarious Muse.
 - **`syncFeatEffects(c)`**: re-deriva todos los efectos automáticos desde la lista de feats actual (dedications, archetype spellcasting, musas). Llamar tras agregar/quitar feats.
 - **`primaryClassSlots(className, level)`**: tabla de slots de conjuros por clase y nivel.
-- **`applyMuseSkills(c, muses)`**: aplica proficiencias y lores de las musas activas.
+- **`evaluateFeatPrereqs(c, item, slot)`** (`lib/prereqs.ts`): comprueba prerrequisitos AoN + clase/ancestría + candado de dedicación.
 
 ---
 
@@ -240,7 +241,7 @@ cd backend && uvicorn app.main:app --reload  # requiere: pip install -r requirem
 
 - **Repositorio:** https://github.com/jfcolladon/pf2e-elhoss-sheet (público)
 - **Rama:** `master`
-- **Versión actual:** `1.3.0`
+- **Versión actual:** `1.4.0`
 - Los archivos de versión son: `VERSION`, `frontend/package.json`, `frontend/src/version.ts`, `backend/app/main.py` (parámetro `version=` del FastAPI constructor).
 - Al subir versión, actualizar los 4 archivos + entrada en `CHANGELOG.md`.
 
@@ -251,6 +252,7 @@ cd backend && uvicorn app.main:app --reload  # requiere: pip install -r requirem
 | 1.1.0 | 2026-06-11 | Selector de clase, musas de bardo, dedications, archetype spellcasting |
 | 1.2.0 | 2026-07-02 | 10 manuales autorizados, fuentes expandidas, endpoint allowed-sources |
 | 1.3.0 | 2026-07-08 | Pestaña Campaña (notas, NPCs, lugares, facciones…) |
+| 1.4.0 | 2026-08-12 | Prerrequisitos de feats al elegir (ocultar no elegibles, bypass DM) |
 
 ---
 
@@ -264,12 +266,14 @@ cd backend && uvicorn app.main:app --reload  # requiere: pip install -r requirem
 6. **Auto-save debounced**: 1 200 ms tras el último cambio. Indicador visual: "Guardado / Guardando… / Cambios sin guardar".
 7. **CRLF issue resuelto**: el `docker-entrypoint.sh` fue eliminado; la lógica de inicialización está inline en el `CMD` del Dockerfile.
 8. **Fuente de house rules**: el ETL intenta descargar el Google Doc; si falla, usa `/app/data/houserules.txt` (incluido en la imagen como fallback). Para actualizar el fallback: editar `data/houserules.txt` y rebuildar.
+9. **Prerrequisitos de feats**: se evalúan en el frontend (`lib/prereqs.ts`) con el campo `prerequisite` de AoN. Texto libre no parseable = aviso, no bloqueo. Modo DM puede saltárselos. Feats de house rules no se comprueban.
 
 ---
 
 ## 12. Tareas pendientes conocidas / ideas futuras
 
 - [ ] Mejorar visualización de efectos de musa en FeatsTab (actualmente se aplican pero la UI podría mostrarlos más claramente).
+- [ ] Comprobar prerrequisitos de ancestry feats de house rules (hoy solo se filtran los del SRD).
 - [ ] Permitir añadir condiciones personalizadas (ahora solo hay checkbox de condiciones conocidas).
 - [ ] Exportar / imprimir hoja de personaje como PDF.
 - [ ] Soporte multi-personaje simultáneo (actualmente un personaje por sesión en la misma pestaña).

@@ -357,6 +357,8 @@ export default function MainTab({ c, update }: { c: Character; update: UpdateFn 
                 category="bard muse"
                 excludeNames={c.muses}
                 dmMode={c.dmMode}
+                character={c}
+                prereqSlot="feature"
                 pickLabel={needsSecondMuse(c) ? "Elegir segunda musa" : "Elegir musa"}
                 onPick={(item) => {
                   update((o) => applyMuseSelection(o, item.name, item.uid));

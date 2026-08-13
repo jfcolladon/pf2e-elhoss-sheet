@@ -11,6 +11,8 @@ export interface CatalogBrief {
   rarity: string | null;
   traits: string[];
   summary: string;
+  prerequisite?: string;
+  archetype?: string[];
 }
 
 export interface SkillState {
@@ -46,6 +48,7 @@ export interface FeatEntry {
   allowed: boolean;
   dmApproved: boolean;
   note: string;
+  archetype?: string[];
 }
 
 /** Fuente de conjuros adicional (p. ej. dedicación a clase caster), separada del lanzamiento de clase. */

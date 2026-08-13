@@ -62,6 +62,7 @@ export default function FeatsTab({ c, update }: { c: Character; update: UpdateFn
         feats: [...o.feats, {
           uid: item.uid, name: item.name, category, level: item.level ?? 1,
           allowed: item.allowed, dmApproved: needsDm,
+          archetype: item.archetype,
           note: dedCaster
             ? `Dedication caster: fuente de conjuros ${dedCaster.tradition} (atributo ${dedCaster.key.toUpperCase()}), entrenado, 2 cantrips.`
             : spellTier
@@ -201,6 +202,8 @@ export default function FeatsTab({ c, update }: { c: Character; update: UpdateFn
             category="bard muse"
             excludeNames={c.muses}
             dmMode={c.dmMode}
+            character={c}
+            prereqSlot="feature"
             pickLabel="Elegir segunda musa"
             onPick={(item) => {
               update((o) => applyMuseSelection(o, item.name, item.uid));
@@ -227,6 +230,8 @@ export default function FeatsTab({ c, update }: { c: Character; update: UpdateFn
                 category={featureType === "class-option" && isBard(c.clazz.name) ? "bard muse" : undefined}
                 excludeNames={featureType === "class-option" ? c.muses : undefined}
                 dmMode={c.dmMode}
+                character={c}
+                prereqSlot="feature"
                 maxLevel={featureType === "class-feature" ? c.level : undefined}
                 pickLabel="Añadir"
                 onPick={(item, needsDm) => {
@@ -266,6 +271,8 @@ export default function FeatsTab({ c, update }: { c: Character; update: UpdateFn
                 <CatalogSearch
                   type="feat"
                   dmMode={c.dmMode}
+                  character={c}
+                  prereqSlot={adding as "ancestry" | "class" | "skill" | "general" | "bonus"}
                   trait={CATEGORIES.find((x) => x.key === adding)?.trait || undefined}
                   maxLevel={c.level}
                   pickLabel="Añadir"
@@ -276,7 +283,8 @@ export default function FeatsTab({ c, update }: { c: Character; update: UpdateFn
               )}
               <p className="muted">
                 Contenido fuera de los manuales autorizados ({ALLOWED_SOURCES_SHORT}) aparece como "No permitido"
-                y solo se puede añadir con Modo DM.
+                y solo se puede añadir con Modo DM. Los feats que no cumplen prerrequisitos se ocultan;
+                puedes verlos con "Mostrar no elegibles". El Modo DM permite añadirlos igualmente.
               </p>
             </>
           )}

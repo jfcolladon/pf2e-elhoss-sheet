@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from .allowed_sources import ALLOWED_SOURCE_LABELS, ALLOWED_SOURCES_SUMMARY
 from .db import get_conn, init_db
 
-app = FastAPI(title="Hoja de Personaje PF2e - Elhoss", version="1.3.0")
+app = FastAPI(title="Hoja de Personaje PF2e - Elhoss", version="1.4.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,9 +30,44 @@ TYPE_ALIASES = {
 }
 
 
+def _normalize_prereq(raw) -> str:
+    if raw is None:
+        return ""
+    if isinstance(raw, list):
+        return "; ".join(str(x) for x in raw if x)
+    text = str(raw).strip()
+    if text.startswith("["):
+        try:
+            parsed = json.loads(text)
+            if isinstance(parsed, list):
+                return "; ".join(str(x) for x in parsed if x)
+        except json.JSONDecodeError:
+            pass
+    return text
+
+
+def _normalize_archetype(raw) -> list[str]:
+    if raw is None:
+        return []
+    if isinstance(raw, list):
+        return [str(x) for x in raw if x]
+    text = str(raw).strip()
+    if not text:
+        return []
+    if text.startswith("["):
+        try:
+            parsed = json.loads(text)
+            if isinstance(parsed, list):
+                return [str(x) for x in parsed if x]
+        except json.JSONDecodeError:
+            pass
+    return [text]
+
+
 def rows_to_brief(rows):
     out = []
     for r in rows:
+        keys = r.keys()
         out.append({
             "uid": r["uid"],
             "type": r["type"],
@@ -43,6 +78,8 @@ def rows_to_brief(rows):
             "rarity": r["rarity"],
             "traits": json.loads(r["traits"] or "[]"),
             "summary": r["summary"],
+            "prerequisite": _normalize_prereq(r["prerequisite"] if "prerequisite" in keys else None),
+            "archetype": _normalize_archetype(r["archetype"] if "archetype" in keys else None),
         })
     return out
 
@@ -63,7 +100,12 @@ def list_catalog(
     if rtype not in TYPE_ALIASES:
         raise HTTPException(404, f"Tipo invalido: {rtype}")
     conn = get_conn()
-    sql = "SELECT uid,type,name,level,source,allowed,rarity,traits,summary FROM srd_items WHERE type=?"
+    sql = (
+        "SELECT uid,type,name,level,source,allowed,rarity,traits,summary, "
+        "json_extract(data, '$.prerequisite') as prerequisite, "
+        "json_extract(data, '$.archetype') as archetype "
+        "FROM srd_items WHERE type=?"
+    )
     params: list = [TYPE_ALIASES[rtype]]
     if category:
         sql += " AND category=?"

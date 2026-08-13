@@ -178,8 +178,13 @@ table.sheet tr:hover td { background: rgba(176,141,63,.08); }
   border-bottom: 1px solid var(--line); cursor: pointer;
 }
 .search-row:hover { background: rgba(176,141,63,.15); }
+.search-row.ineligible { opacity: .55; background: #f4eee0; }
+.search-row.ineligible:hover { background: #efe6d2; }
 .search-row .nm { font-weight: 700; }
 .search-row .src { font-size: 11px; color: #6b5d44; margin-left: auto; white-space: nowrap; }
+.prereq-line { padding: 2px 14px 8px; font-size: 12px; border-bottom: 1px solid var(--line); background: #fbf7eb; }
+.prereq-missing { color: var(--warn); font-weight: 600; }
+.prereq-warn { color: #8b7a2b; }
 
 .aon-md { line-height: 1.5; }
 .aon-md h3.aon-title { color: var(--pf-red); margin: 4px 0; }

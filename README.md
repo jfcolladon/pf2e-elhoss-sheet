@@ -1,6 +1,6 @@
 # Hoja de Personaje PF2e — Elhoss Eastern Lands
 
-**Versión:** 1.2.0
+**Versión:** 1.4.0
 
 Aplicación web dockerizada de hoja de personaje para **Pathfinder 2e (legacy)**, con contenido **permitido** de los manuales oficiales de la campaña más las **house rules** de **Elhoss Eastern Lands** (psiónica salvaje estilo Dark Sun).
 
@@ -115,6 +115,7 @@ El build queda en `frontend/dist/`; en Docker se copia automáticamente a `stati
 - **Multiclase caster**: dedications (p. ej. Cleric Dedication) crean fuente de conjuros adicional; Basic/Expert/Master Spellcasting calcula slots.
 - **Conjuros**: cantrips, signature spells, composition, focus points, fuentes múltiples.
 - **Psiónica (house rules)**: clase Psiónico, wild talents 3d100, 237 poderes del doc de campaña.
+- **Feats**: al elegir, se ocultan los que no cumplen prerrequisitos (atributos, skills, feats/musas, clase/ancestría, candado de dedicación). Modo DM puede saltárselos.
 - **Asistente de creación** con reglas de mesa (4d6, ancestries custom, etc.).
 
 ---

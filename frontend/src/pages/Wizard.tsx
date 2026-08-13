@@ -362,6 +362,8 @@ export default function Wizard() {
                   type="class-option"
                   category="bard muse"
                   dmMode={c.dmMode}
+                  character={c}
+                  prereqSlot="feature"
                   pickLabel="Elegir musa"
                   onPick={(item) => {
                     setC((old) => applyMuseSelection(old, item.name, item.uid));

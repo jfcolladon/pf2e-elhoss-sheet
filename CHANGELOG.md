@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.0] — 2026-08-12
+
+### Añadido
+- **Prerrequisitos de feats**: al elegir un feat, se comprueba si el personaje lo cumple.
+- Se evalúan atributos, proficiencia de skills (con Versatile Performance), feats previos (incluidos los que otorga una musa), musas, clase/ancestría implícitas y el candado de dedicación (2 feats del arquetipo antes de otra Dedication).
+- Los feats no elegibles se ocultan por defecto; checkbox **Mostrar no elegibles** los deja ver grisados con el requisito que falta.
+- Prerrequisitos de texto libre no comprobables se permiten con aviso. El **Modo DM** puede añadir feats que no cumplen.
+
 ## [1.3.0] — 2026-07-08
 
 ### Añadido

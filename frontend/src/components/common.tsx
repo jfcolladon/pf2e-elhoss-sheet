@@ -2,7 +2,8 @@ import { ReactNode, useEffect, useState } from "react";
 import { api } from "../api";
 import { AonMarkdown } from "../lib/markdown";
 import { ALLOWED_SOURCES_SHORT } from "../lib/sources";
-import { CatalogBrief, ProfRank, RANK_LABELS } from "../types";
+import { CatalogBrief, Character, ProfRank, RANK_LABELS } from "../types";
+import { evaluateFeatPrereqs, FeatSlot, PrereqResult } from "../lib/prereqs";
 
 export function Section({ title, extra, children }: { title: string; extra?: ReactNode; children: ReactNode }) {
   return (
@@ -80,6 +81,8 @@ export function CatalogSearch({
   onPick,
   pickLabel = "Añadir",
   dmMode = false,
+  character,
+  prereqSlot,
 }: {
   type: string;
   trait?: string;
@@ -90,12 +93,17 @@ export function CatalogSearch({
   onPick: (item: CatalogBrief, dmApproved: boolean) => void;
   pickLabel?: string;
   dmMode?: boolean;
+  character?: Character;
+  prereqSlot?: FeatSlot;
 }) {
   const [q, setQ] = useState("");
   const [onlyAllowed, setOnlyAllowed] = useState(true);
+  const [showIneligible, setShowIneligible] = useState(false);
   const [results, setResults] = useState<CatalogBrief[]>([]);
   const [detail, setDetail] = useState<{ uid: string; md: string } | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const checkPrereqs = Boolean(character) && (type === "feat" || type === "class-feature" || type === "class-option");
 
   useEffect(() => {
     let live = true;
@@ -120,9 +128,18 @@ export function CatalogSearch({
   const excluded = new Set((excludeNames ?? []).map((n) => n.toLowerCase()));
   const visible = results.filter((r) => !excluded.has(r.name.toLowerCase()));
 
+  const evaluated: { r: CatalogBrief; ev: PrereqResult }[] = visible.map((r) => ({
+    r,
+    ev: checkPrereqs && character
+      ? evaluateFeatPrereqs(character, r, prereqSlot)
+      : { ok: true, missing: [], warnings: [] },
+  }));
+  const hiddenCount = evaluated.filter((e) => !e.ev.ok).length;
+  const shown = showIneligible || !checkPrereqs ? evaluated : evaluated.filter((e) => e.ev.ok);
+
   return (
     <div>
-      <div className="row" style={{ marginBottom: 8 }}>
+      <div className="row" style={{ marginBottom: 8, flexWrap: "wrap" }}>
         <input
           style={{ flex: 1, minWidth: 180 }}
           placeholder={`Buscar ${type}...`}
@@ -134,38 +151,78 @@ export function CatalogSearch({
           <input type="checkbox" checked={onlyAllowed} onChange={(e) => setOnlyAllowed(e.target.checked)} />
           Solo permitido ({ALLOWED_SOURCES_SHORT})
         </label>
+        {checkPrereqs && (
+          <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <input type="checkbox" checked={showIneligible} onChange={(e) => setShowIneligible(e.target.checked)} />
+            Mostrar no elegibles{hiddenCount > 0 ? ` (${hiddenCount})` : ""}
+          </label>
+        )}
       </div>
       <div className="search-results">
         {loading && <div style={{ padding: 10 }}>Buscando…</div>}
-        {!loading && visible.length === 0 && <div style={{ padding: 10 }}>Sin resultados.</div>}
-        {visible.map((r) => (
-          <div key={r.uid}>
-            <div className="search-row" onClick={async () => {
-              if (detail?.uid === r.uid) { setDetail(null); return; }
-              const it = await api.item(r.uid);
-              setDetail({ uid: r.uid, md: String(it.markdown ?? it.summary ?? "") });
-            }}>
-              <span className="nm">{r.name}</span>
-              {r.level !== null && <span className="muted">niv. {r.level}</span>}
-              <AllowedBadge allowed={r.allowed} />
-              <span className="src">{r.source}</span>
-              <button
-                className="small"
-                disabled={!r.allowed && !dmMode}
-                title={!r.allowed && !dmMode ? "Requiere aprobación del DM (activa Modo DM)" : ""}
-                onClick={(e) => { e.stopPropagation(); onPick(r, !r.allowed); }}
-              >
-                {!r.allowed ? `${pickLabel} (DM)` : pickLabel}
-              </button>
-            </div>
-            {detail?.uid === r.uid && (
-              <div style={{ padding: "6px 14px", background: "#fffdf6", borderBottom: "1px solid var(--line)" }}>
-                <TraitChips traits={r.traits} />
-                <AonMarkdown md={detail.md} />
-              </div>
-            )}
+        {!loading && shown.length === 0 && (
+          <div style={{ padding: 10 }}>
+            {visible.length === 0
+              ? "Sin resultados."
+              : "Ningún resultado cumple los prerrequisitos. Activa \"Mostrar no elegibles\" para verlos."}
           </div>
-        ))}
+        )}
+        {shown.map(({ r, ev }) => {
+          const blockedSource = !r.allowed && !dmMode;
+          const blockedPrereq = !ev.ok && !dmMode;
+          const disabled = blockedSource || blockedPrereq;
+          let title = "";
+          if (blockedSource) title = "Requiere aprobación del DM (activa Modo DM)";
+          else if (!ev.ok && dmMode) title = `No cumple prerrequisitos (Modo DM permite añadirlo): ${ev.missing.join("; ")}`;
+          else if (!ev.ok) title = `No cumple: ${ev.missing.join("; ")}`;
+          const btnLabel = !r.allowed
+            ? `${pickLabel} (DM)`
+            : !ev.ok && dmMode
+            ? `${pickLabel} (sin prereq)`
+            : pickLabel;
+          return (
+            <div key={r.uid}>
+              <div
+                className={`search-row${ev.ok ? "" : " ineligible"}`}
+                onClick={async () => {
+                  if (detail?.uid === r.uid) { setDetail(null); return; }
+                  const it = await api.item(r.uid);
+                  setDetail({ uid: r.uid, md: String(it.markdown ?? it.summary ?? "") });
+                }}
+              >
+                <span className="nm">{r.name}</span>
+                {r.level !== null && <span className="muted">niv. {r.level}</span>}
+                <AllowedBadge allowed={r.allowed} />
+                <span className="src">{r.source}</span>
+                <button
+                  className="small"
+                  disabled={disabled}
+                  title={title}
+                  onClick={(e) => { e.stopPropagation(); onPick(r, !r.allowed); }}
+                >
+                  {btnLabel}
+                </button>
+              </div>
+              {(!ev.ok || ev.warnings.length > 0) && (
+                <div className="prereq-line">
+                  {r.prerequisite && <span className="muted">Prerreq.: {r.prerequisite}</span>}
+                  {ev.missing.map((m) => (
+                    <div key={m} className="prereq-missing">Falta: {m}</div>
+                  ))}
+                  {ev.warnings.map((w) => (
+                    <div key={w} className="prereq-warn">{w}</div>
+                  ))}
+                </div>
+              )}
+              {detail?.uid === r.uid && (
+                <div style={{ padding: "6px 14px", background: "#fffdf6", borderBottom: "1px solid var(--line)" }}>
+                  <TraitChips traits={r.traits} />
+                  <AonMarkdown md={detail.md} />
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
