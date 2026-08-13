@@ -184,7 +184,7 @@ export interface Character {
     wildRoll: { dice: number[]; total: number } | null;
   };
   inventory: InventoryItem[];
-  money: { cp: number; sp: number; gp: number };
+  money: { gp: number; sp: number; cp: number; tp: number };
   conditions: string[];
   notes: string;
   campaignNotes: CampaignNote[];
@@ -256,7 +256,7 @@ export function defaultCharacter(): Character {
       pfp: { current: 0, maxOverride: null }, powers: [], wildRoll: null,
     },
     inventory: [],
-    money: { cp: 0, sp: 0, gp: 0 },
+    money: { gp: 0, sp: 0, cp: 0, tp: 0 },
     conditions: [],
     notes: "",
     campaignNotes: [],

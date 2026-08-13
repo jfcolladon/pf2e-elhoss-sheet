@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.6.1] — 2026-08-12
+
+### Añadido
+- **Talore** como moneda (fracción del Siran).
+
+### Cambiado
+- Nombres de moneda solo en Elhoss: Orivan, Thalmar, Siran, Talore (sin oro/plata/cobre ni equivalencias).
+- Corrección de **Talmar** → **Thalmar**.
+
 ## [1.6.0] — 2026-08-12
 
 ### Cambiado

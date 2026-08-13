@@ -34,12 +34,13 @@ export default function Sheet() {
       merged.campaignNotes = data.campaignNotes ?? [];
       merged.portrait = data.portrait ?? "";
       {
-        const oldMoney = (data.money ?? {}) as { cp?: number; sp?: number; gp?: number; pp?: number };
+        const oldMoney = (data.money ?? {}) as { cp?: number; sp?: number; gp?: number; pp?: number; tp?: number };
         const pp = Number(oldMoney.pp ?? 0);
         merged.money = {
-          cp: Number(oldMoney.cp ?? 0),
-          sp: Number(oldMoney.sp ?? 0),
           gp: Number(oldMoney.gp ?? 0) + pp * 10,
+          sp: Number(oldMoney.sp ?? 0),
+          cp: Number(oldMoney.cp ?? 0),
+          tp: Number(oldMoney.tp ?? 0),
         };
       }
       // compat: si no hay atributo de conjuro guardado, hereda el de la clase
