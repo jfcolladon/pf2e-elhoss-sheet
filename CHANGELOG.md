@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.7.0] — 2026-08-12
+
+### Cambiado
+- **Moneda de Thalan'dorœ** según la tabla de campaña:
+  - **Thaloré** — 50 Orivan (oro cuadrado con gema; tratados, dotes, tierras).
+  - **Orivan** — 100 Thalmar (oro circular 10 g).
+  - **Thalmar** — 10 Syran (mármol pulido).
+  - **Syran** — base (arcilla circular divisible).
+  - **Syri** y **Ran** — mitades de un Syran.
+- El antiguo campo `tp` (Talore como fracción de cobre) no se migra a Thaloré.
+
 ## [1.6.1] — 2026-08-12
 
 ### Añadido

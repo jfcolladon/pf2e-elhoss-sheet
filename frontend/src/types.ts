@@ -115,6 +115,43 @@ export interface InventoryItem {
   note: string;
 }
 
+/** Moneda de Thalan'dorœ / Elhoss. */
+export interface ElhossMoney {
+  thalore: number; // Thaloré — 50 Orivan
+  orivan: number;  // 100 Thalmar
+  thalmar: number; // 10 Syran
+  syran: number;   // base; partible en Syri y Ran
+  syri: number;
+  ran: number;
+}
+
+export const EMPTY_MONEY: ElhossMoney = {
+  thalore: 0, orivan: 0, thalmar: 0, syran: 0, syri: 0, ran: 0,
+};
+
+/** Migra gp/sp/cp (y pp) al modelo Elhoss. No convierte el antiguo `tp` (Talore mal interpretado como fracción de cobre). */
+export function migrateMoney(raw: unknown): ElhossMoney {
+  if (!raw || typeof raw !== "object") return { ...EMPTY_MONEY };
+  const m = raw as Record<string, unknown>;
+  const n = (k: string) => Number(m[k] ?? 0) || 0;
+  if ("orivan" in m || "syran" in m || "thalore" in m || "thalmar" in m) {
+    return {
+      thalore: n("thalore"),
+      orivan: n("orivan"),
+      thalmar: n("thalmar"),
+      syran: n("syran"),
+      syri: n("syri"),
+      ran: n("ran"),
+    };
+  }
+  return {
+    ...EMPTY_MONEY,
+    orivan: n("gp") + n("pp") * 10,
+    thalmar: n("sp"),
+    syran: n("cp"),
+  };
+}
+
 export type NoteCategory = "npc" | "location" | "faction" | "rumor" | "note" | "other";
 
 export interface CampaignNote {
@@ -184,7 +221,7 @@ export interface Character {
     wildRoll: { dice: number[]; total: number } | null;
   };
   inventory: InventoryItem[];
-  money: { gp: number; sp: number; cp: number; tp: number };
+  money: ElhossMoney;
   conditions: string[];
   notes: string;
   campaignNotes: CampaignNote[];
@@ -256,7 +293,7 @@ export function defaultCharacter(): Character {
       pfp: { current: 0, maxOverride: null }, powers: [], wildRoll: null,
     },
     inventory: [],
-    money: { gp: 0, sp: 0, cp: 0, tp: 0 },
+    money: { thalore: 0, orivan: 0, thalmar: 0, syran: 0, syri: 0, ran: 0 },
     conditions: [],
     notes: "",
     campaignNotes: [],

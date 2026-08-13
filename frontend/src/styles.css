@@ -171,7 +171,8 @@ label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spa
 }
 .teml button.on { background: var(--pf-red); color: #f3e6c8; border-color: var(--pf-red); }
 
-table.sheet { width: 100%; border-collapse: collapse; }
+table.sheet.money-ref { font-size: 13px; margin-top: 4px; }
+table.sheet.money-ref td { vertical-align: top; }
 table.sheet th {
   text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
   color: #5d4f38; border-bottom: 2px solid var(--pf-red); padding: 4px 6px;

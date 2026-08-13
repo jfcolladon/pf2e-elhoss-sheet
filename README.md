@@ -1,6 +1,6 @@
 # Hoja de Personaje PF2e — Elhoss Eastern Lands
 
-**Versión:** 1.6.1
+**Versión:** 1.7.0
 
 Aplicación web dockerizada de hoja de personaje para **Pathfinder 2e (legacy)**, con contenido **permitido** de los manuales oficiales de la campaña más las **house rules** de **Elhoss Eastern Lands** (psiónica salvaje estilo Dark Sun).
 

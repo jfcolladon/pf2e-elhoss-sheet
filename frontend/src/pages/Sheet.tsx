@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../api";
-import { Character, defaultCharacter } from "../types";
+import { Character, defaultCharacter, migrateMoney } from "../types";
 import MainTab from "../tabs/MainTab";
 import SkillsTab from "../tabs/SkillsTab";
 import FeatsTab from "../tabs/FeatsTab";
@@ -33,16 +33,7 @@ export default function Sheet() {
       merged.extraCasters = data.extraCasters ?? [];
       merged.campaignNotes = data.campaignNotes ?? [];
       merged.portrait = data.portrait ?? "";
-      {
-        const oldMoney = (data.money ?? {}) as { cp?: number; sp?: number; gp?: number; pp?: number; tp?: number };
-        const pp = Number(oldMoney.pp ?? 0);
-        merged.money = {
-          gp: Number(oldMoney.gp ?? 0) + pp * 10,
-          sp: Number(oldMoney.sp ?? 0),
-          cp: Number(oldMoney.cp ?? 0),
-          tp: Number(oldMoney.tp ?? 0),
-        };
-      }
+      merged.money = migrateMoney(data.money);
       // compat: si no hay atributo de conjuro guardado, hereda el de la clase
       if (!data.spellcasting?.ability) merged.spellcasting.ability = merged.clazz.keyAbility;
       if (!data.spellcasting?.tradition) merged.spellcasting.tradition = merged.clazz.tradition;

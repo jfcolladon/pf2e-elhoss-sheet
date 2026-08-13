@@ -3,7 +3,14 @@ import { api } from "../api";
 import { UpdateFn } from "../pages/Sheet";
 import { Section, Modal, CatalogSearch } from "../components/common";
 import { bulkLimit, bulkUsed } from "../lib/calc";
-import { Character } from "../types";
+import { Character, ElhossMoney } from "../types";
+
+const COINS: { key: keyof ElhossMoney; label: string; value: string; form: string }[] = [
+  { key: "thalore", label: "Thaloré", value: "50 Orivan", form: "Oro cuadrado con gema" },
+  { key: "orivan", label: "Orivan", value: "100 Thalmar", form: "Oro circular (10 g)" },
+  { key: "thalmar", label: "Thalmar", value: "10 Syran", form: "Mármol pulido circular" },
+  { key: "syran", label: "Syran", value: "Base", form: "Arcilla circular (divisible)" },
+];
 
 export default function InventoryTab({ c, update }: { c: Character; update: UpdateFn }) {
   const [adding, setAdding] = useState(false);
@@ -57,14 +64,9 @@ export default function InventoryTab({ c, update }: { c: Character; update: Upda
         </p>
       </Section>
 
-      <Section title="Dinero">
-        <div className="row">
-          {([
-            { key: "gp" as const, label: "Orivan" },
-            { key: "sp" as const, label: "Thalmar" },
-            { key: "cp" as const, label: "Siran" },
-            { key: "tp" as const, label: "Talore" },
-          ]).map((m) => (
+      <Section title="Dinero — Thalan'dorœ">
+        <div className="row" style={{ marginBottom: 10 }}>
+          {COINS.map((m) => (
             <div className="field" key={m.key}>
               <label>{m.label}</label>
               <input type="number" min={0} value={c.money[m.key] ?? 0}
@@ -72,6 +74,44 @@ export default function InventoryTab({ c, update }: { c: Character; update: Upda
             </div>
           ))}
         </div>
+        <div className="row" style={{ marginBottom: 10 }}>
+          <div className="field">
+            <label>Syri</label>
+            <input type="number" min={0} value={c.money.syri ?? 0}
+              onChange={(e) => update((o) => ({ ...o, money: { ...o.money, syri: +e.target.value } }))} />
+          </div>
+          <div className="field">
+            <label>Ran</label>
+            <input type="number" min={0} value={c.money.ran ?? 0}
+              onChange={(e) => update((o) => ({ ...o, money: { ...o.money, ran: +e.target.value } }))} />
+          </div>
+          <p className="muted" style={{ alignSelf: "end", margin: 0 }}>
+            Mitades de un Syran (arcilla partible).
+          </p>
+        </div>
+        <table className="sheet money-ref">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Valor</th>
+              <th>Material y forma</th>
+            </tr>
+          </thead>
+          <tbody>
+            {COINS.map((m) => (
+              <tr key={m.key}>
+                <td><b>{m.label}</b></td>
+                <td>{m.value}</td>
+                <td className="muted">{m.form}</td>
+              </tr>
+            ))}
+            <tr>
+              <td><b>Syri</b> / <b>Ran</b></td>
+              <td>½ Syran c/u</td>
+              <td className="muted">Mitades del Syran (hueco cuadrado, 4 patrones en cruz)</td>
+            </tr>
+          </tbody>
+        </table>
       </Section>
 
       {adding && (
