@@ -40,7 +40,7 @@ Todo contenido fuera de esos manuales aparece como "No permitido" con checkbox d
 d:\Pathfinder personaje\
 ├── Dockerfile              # 3 etapas: frontend build → seed DB → imagen final
 ├── docker-compose.yml      # puerto 8080:8000, volumen pf2e_data:/data
-├── VERSION                 # 1.5.0
+├── VERSION                 # 1.6.0
 ├── CHANGELOG.md
 ├── README.md
 ├── data/
@@ -176,7 +176,7 @@ Character {
 
   // inventario
   inventory: InventoryItem[]
-  money: { cp, sp, gp, pp }
+  money: { cp, sp, gp }  // Siran, Talmar, Orivan (sin platino)
 
   // notas
   conditions: string[]
@@ -242,7 +242,7 @@ cd backend && uvicorn app.main:app --reload  # requiere: pip install -r requirem
 
 - **Repositorio:** https://github.com/jfcolladon/pf2e-elhoss-sheet (público)
 - **Rama:** `master`
-- **Versión actual:** `1.5.0`
+- **Versión actual:** `1.6.0`
 - Los archivos de versión son: `VERSION`, `frontend/package.json`, `frontend/src/version.ts`, `backend/app/main.py` (parámetro `version=` del FastAPI constructor).
 - Al subir versión, actualizar los 4 archivos + entrada en `CHANGELOG.md`.
 
@@ -255,6 +255,7 @@ cd backend && uvicorn app.main:app --reload  # requiere: pip install -r requirem
 | 1.3.0 | 2026-07-08 | Pestaña Campaña (notas, NPCs, lugares, facciones…) |
 | 1.4.0 | 2026-08-12 | Prerrequisitos de feats al elegir (ocultar no elegibles, bypass DM) |
 | 1.5.0 | 2026-08-12 | Retrato del personaje en pestaña Principal |
+| 1.6.0 | 2026-08-12 | Moneda Elhoss: Orivan / Talmar / Siran (sin platino) |
 
 ---
 

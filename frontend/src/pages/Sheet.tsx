@@ -33,6 +33,15 @@ export default function Sheet() {
       merged.extraCasters = data.extraCasters ?? [];
       merged.campaignNotes = data.campaignNotes ?? [];
       merged.portrait = data.portrait ?? "";
+      {
+        const oldMoney = (data.money ?? {}) as { cp?: number; sp?: number; gp?: number; pp?: number };
+        const pp = Number(oldMoney.pp ?? 0);
+        merged.money = {
+          cp: Number(oldMoney.cp ?? 0),
+          sp: Number(oldMoney.sp ?? 0),
+          gp: Number(oldMoney.gp ?? 0) + pp * 10,
+        };
+      }
       // compat: si no hay atributo de conjuro guardado, hereda el de la clase
       if (!data.spellcasting?.ability) merged.spellcasting.ability = merged.clazz.keyAbility;
       if (!data.spellcasting?.tradition) merged.spellcasting.tradition = merged.clazz.tradition;

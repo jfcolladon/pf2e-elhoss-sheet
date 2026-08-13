@@ -59,14 +59,21 @@ export default function InventoryTab({ c, update }: { c: Character; update: Upda
 
       <Section title="Dinero">
         <div className="row">
-          {(["pp", "gp", "sp", "cp"] as const).map((m) => (
-            <div className="field" key={m}>
-              <label>{m.toUpperCase()}</label>
-              <input type="number" value={c.money[m]}
-                onChange={(e) => update((o) => ({ ...o, money: { ...o.money, [m]: +e.target.value } }))} />
+          {([
+            { key: "gp" as const, label: "Orivan", hint: "oro" },
+            { key: "sp" as const, label: "Talmar", hint: "plata" },
+            { key: "cp" as const, label: "Siran", hint: "cobre" },
+          ]).map((m) => (
+            <div className="field" key={m.key}>
+              <label>{m.label} <span className="muted">({m.hint})</span></label>
+              <input type="number" min={0} value={c.money[m.key]}
+                onChange={(e) => update((o) => ({ ...o, money: { ...o.money, [m.key]: +e.target.value } }))} />
             </div>
           ))}
         </div>
+        <p className="muted" style={{ marginTop: 8 }}>
+          10 Siran = 1 Talmar · 10 Talmar = 1 Orivan. No hay platino en Elhoss.
+        </p>
       </Section>
 
       {adding && (

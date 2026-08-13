@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.6.0] — 2026-08-12
+
+### Cambiado
+- **Moneda de Elhoss** en Inventario: Orivan (oro), Talmar (plata) y Siran (cobre). Se elimina el platino.
+- Personajes viejos: el platino guardado se convierte a Orivan (1 pp = 10 Orivan).
+
 ## [1.5.0] — 2026-08-12
 
 ### Añadido
