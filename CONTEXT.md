@@ -48,7 +48,7 @@ d:\Pathfinder personaje\
 ├── backend/
 │   ├── requirements.txt    # fastapi 0.115.12 · uvicorn 0.34.2 · httpx 0.28.1
 │   ├── app/
-│   │   ├── main.py         # FastAPI app (version="1.5.0"), endpoints REST + sirve /static
+│   │   ├── main.py         # FastAPI app (version="1.6.0"), endpoints REST + sirve /static
 │   │   ├── db.py           # SQLite schema + get_conn()
 │   │   ├── allowed_sources.py  # ALLOWED_SOURCES frozenset (10 manuales)
 │   │   └── __init__.py
@@ -58,7 +58,7 @@ d:\Pathfinder personaje\
 │       ├── refresh_catalog.py  # Re-copia tablas catalog desde /seed/app.db al volumen persistente (sin tocar characters)
 │       └── __init__.py
 └── frontend/
-    ├── package.json        # pf2e-elhoss-sheet v1.5.0 · React 18 · Vite 5 · TypeScript
+    ├── package.json        # pf2e-elhoss-sheet v1.6.0 · React 18 · Vite 5 · TypeScript
     ├── vite.config.ts      # proxy /api → localhost:8000
     ├── index.html          # Google Fonts: Cinzel + Crimson Text
     └── src/
@@ -66,7 +66,7 @@ d:\Pathfinder personaje\
         ├── App.tsx             # Layout: topbar (versión + manuales autorizados) + <Outlet>
         ├── api.ts              # Cliente HTTP: catalog, houserules, character CRUD
         ├── types.ts            # Interfaces TS: Character, CampaignNote, FeatEntry, etc.
-        ├── version.ts          # APP_VERSION = "1.5.0"
+        ├── version.ts          # APP_VERSION = "1.6.0"
         ├── styles.css          # Tema PF2e (colores Cinzel/parchment), nota-cards, etc.
         ├── pages/
         │   ├── CharacterList.tsx   # Lista de personajes
