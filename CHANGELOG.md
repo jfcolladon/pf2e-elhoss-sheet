@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.9.0] — 2026-08-13
+
+### Corregido
+- Parser de poderes psiónicos: la línea `Difficulty:` ya no sustituye el nombre ni mezcla un poder con el siguiente.
+- Descripciones del manual psiónico ordenadas (efecto, grados de salvación, Foco/Debilidad/Narrativa) **sin citar Archives of Nethys**.
+- Tablas de la clase Psiónico reconstruidas (el export de Google Docs las dejaba ilegibles).
+
+### Añadido
+- Visor de house rules con listas, salvaciones y tablas.
+- Características de clase **Psiónico** desde el manual de Elhoss (no Psychic de AoN).
+
 ## [1.8.1] — 2026-08-12
 
 ### Cambiado

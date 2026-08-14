@@ -3,7 +3,7 @@ import { api } from "../api";
 import { CatalogBrief } from "../types";
 import { UpdateFn } from "../pages/Sheet";
 import { Section, Modal, CatalogSearch, HouseRulePicker, AllowedBadge } from "../components/common";
-import { AonMarkdown } from "../lib/markdown";
+import { AonMarkdown, HouseRuleMarkdown } from "../lib/markdown";
 import { CASTER_DEDICATIONS, detectCaster, museGrant, detectSpellTier, syncFeatEffects, applyMuseSelection, isBard, isMultifariousMuseFeat, needsSecondMuse, maxMuses } from "../lib/rules";
 import { ALLOWED_SOURCES_SHORT } from "../lib/sources";
 import { Character, FeatEntry } from "../types";
@@ -21,7 +21,7 @@ export default function FeatsTab({ c, update }: { c: Character; update: UpdateFn
   const [adding, setAdding] = useState<string | null>(null);
   const [source, setSource] = useState<"srd" | "house">("srd");
   const [featureType, setFeatureType] = useState<"class-option" | "class-feature">("class-option");
-  const [detail, setDetail] = useState<{ name: string; md: string } | null>(null);
+  const [detail, setDetail] = useState<{ name: string; md: string; house?: boolean } | null>(null);
   const [forceSecondMuse, setForceSecondMuse] = useState(false);
 
   const secondMuseRequired = needsSecondMuse(c);
@@ -86,11 +86,11 @@ export default function FeatsTab({ c, update }: { c: Character; update: UpdateFn
 
   const showDetail = async (f: FeatEntry) => {
     if (!f.uid) {
-      setDetail({ name: f.name, md: f.note || "(Sin descripción)" });
+      setDetail({ name: f.name, md: f.note || "(Sin descripción)", house: true });
       return;
     }
     const it = await api.item(f.uid);
-    setDetail({ name: f.name, md: String(it.markdown ?? "") });
+    setDetail({ name: f.name, md: String(it.markdown ?? ""), house: false });
   };
 
   return (
@@ -140,7 +140,10 @@ export default function FeatsTab({ c, update }: { c: Character; update: UpdateFn
           <Section
             key={cat.key}
             title={cat.label}
-            extra={<button className="small" onClick={() => setAdding(cat.key)}>+ Añadir</button>}
+            extra={<button className="small" onClick={() => {
+              setAdding(cat.key);
+              if (cat.key === "feature" && c.clazz.isPsionic) setSource("house");
+            }}>+ Añadir</button>}
           >
             {feats.length === 0 && <p className="muted">Ninguno.</p>}
             <table className="sheet">
@@ -225,27 +228,48 @@ export default function FeatsTab({ c, update }: { c: Character; update: UpdateFn
                   Característica de clase
                 </button>
               </div>
-              <CatalogSearch
-                type={featureType}
-                category={featureType === "class-option" && isBard(c.clazz.name) ? "bard muse" : undefined}
-                excludeNames={featureType === "class-option" ? c.muses : undefined}
-                dmMode={c.dmMode}
-                character={c}
-                prereqSlot="feature"
-                maxLevel={featureType === "class-feature" ? c.level : undefined}
-                pickLabel="Añadir"
-                onPick={(item, needsDm) => {
-                  if (featureType === "class-option" && museGrant(item.name)) {
-                    update((o) => applyMuseSelection(o, item.name, item.uid));
+              {c.clazz.isPsionic && featureType === "class-feature" && (
+                <div className="tabs" style={{ marginBottom: 8 }}>
+                  <button className={source === "house" ? "active" : ""} onClick={() => setSource("house")}>House Rules de Elhoss</button>
+                  <button className={source === "srd" ? "active" : ""} onClick={() => setSource("srd")}>SRD (solo con aprobación DM)</button>
+                </div>
+              )}
+              {c.clazz.isPsionic && featureType === "class-feature" && source === "house" ? (
+                <HouseRulePicker
+                  kind="psionic_feature"
+                  pickLabel="Añadir"
+                  onPick={(entry) => {
+                    addFeat({
+                      uid: null, name: entry.title, level: Number(entry.data?.level ?? 1),
+                      allowed: true, dmApproved: false, note: entry.content,
+                    });
                     setAdding(null);
-                  } else {
-                    pickFromCatalog(item, needsDm, "feature");
-                  }
-                }}
-              />
+                  }}
+                />
+              ) : (
+                <CatalogSearch
+                  type={featureType}
+                  category={featureType === "class-option" && isBard(c.clazz.name) ? "bard muse" : undefined}
+                  excludeNames={featureType === "class-option" ? c.muses : undefined}
+                  dmMode={c.dmMode}
+                  character={c}
+                  prereqSlot="feature"
+                  maxLevel={featureType === "class-feature" ? c.level : undefined}
+                  pickLabel="Añadir"
+                  onPick={(item, needsDm) => {
+                    if (featureType === "class-option" && museGrant(item.name)) {
+                      update((o) => applyMuseSelection(o, item.name, item.uid));
+                      setAdding(null);
+                    } else {
+                      pickFromCatalog(item, needsDm, "feature");
+                    }
+                  }}
+                />
+              )}
               <p className="muted">
-                Subclase incluye musa de bardo, bloodlines, instintos, órdenes, etc. (busca p. ej. "enigma", "maestro").
-                Al elegir una musa se añaden su feat y conjuro otorgados.
+                {c.clazz.isPsionic && featureType === "class-feature"
+                  ? "La clase Psiónico es house rule de Elhoss. Las características salen del manual de campaña, no de Psychic de Archives of Nethys."
+                  : "Subclase incluye musa de bardo, bloodlines, instintos, órdenes, etc. (busca p. ej. \"enigma\", \"maestro\"). Al elegir una musa se añaden su feat y conjuro otorgados."}
               </p>
               {museWarning && <p className="warn">⚠ {museWarning}</p>}
             </>
@@ -263,7 +287,7 @@ export default function FeatsTab({ c, update }: { c: Character; update: UpdateFn
                   ancestry={c.ancestry.custom ? c.ancestry.name : undefined}
                   pickLabel="Añadir"
                   onPick={(entry) => {
-                    addFeat({ uid: null, name: entry.title, level: Number(entry.data?.level ?? 1), allowed: true, dmApproved: false, note: entry.content.slice(0, 400) });
+                    addFeat({ uid: null, name: entry.title, level: Number(entry.data?.level ?? 1), allowed: true, dmApproved: false, note: entry.content });
                     setAdding(null);
                   }}
                 />
@@ -293,7 +317,7 @@ export default function FeatsTab({ c, update }: { c: Character; update: UpdateFn
 
       {detail && (
         <Modal title={detail.name} onClose={() => setDetail(null)}>
-          <AonMarkdown md={detail.md} />
+          {detail.house ? <HouseRuleMarkdown md={detail.md} /> : <AonMarkdown md={detail.md} />}
         </Modal>
       )}
     </div>

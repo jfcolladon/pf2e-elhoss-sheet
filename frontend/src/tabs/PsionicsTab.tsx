@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../api";
 import { UpdateFn } from "../pages/Sheet";
 import { Section, Modal, Counter } from "../components/common";
+import { HouseRuleMarkdown } from "../lib/markdown";
 import {
   disciplineWarning, fmt, maxPfp, maxPowerRank, psionicAttack, psionicDc, psionicProfRank,
 } from "../lib/calc";
@@ -228,8 +229,8 @@ export function PowerDetail({ p }: { p: PsionicPower }) {
         {p.save && <> · <b>Salvación:</b> {p.save}</>}
         {p.trigger && <> · <b>Trigger:</b> {p.trigger}</>}
       </p>
-      <div style={{ whiteSpace: "pre-wrap" }}>{p.description}</div>
-      {p.heightened && <p style={{ whiteSpace: "pre-wrap" }}><b>{p.heightened}</b></p>}
+      <HouseRuleMarkdown md={p.description} />
+      {p.heightened && <HouseRuleMarkdown md={p.heightened} />}
     </div>
   );
 }

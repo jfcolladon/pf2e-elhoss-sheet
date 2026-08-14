@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { api } from "../api";
-import { AonMarkdown } from "../lib/markdown";
+import { AonMarkdown, HouseRuleMarkdown } from "../lib/markdown";
 import { ALLOWED_SOURCES_SHORT } from "../lib/sources";
 import { CatalogBrief, Character, ProfRank, RANK_LABELS } from "../types";
 import { evaluateFeatPrereqs, FeatSlot, PrereqResult } from "../lib/prereqs";
@@ -266,8 +266,8 @@ export function HouseRulePicker({
             <button className="small" style={{ marginLeft: "auto" }} onClick={() => onPick(it)}>{pickLabel}</button>
           </div>
           {open === it.id && (
-            <div style={{ padding: "6px 14px", background: "#fffdf6", borderBottom: "1px solid var(--line)", whiteSpace: "pre-wrap" }}>
-              {it.content}
+            <div style={{ padding: "6px 14px", background: "#fffdf6", borderBottom: "1px solid var(--line)" }}>
+              <HouseRuleMarkdown md={it.content} />
             </div>
           )}
         </div>

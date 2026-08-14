@@ -69,14 +69,24 @@ CUSTOM_ANCESTRIES = [
      "flaw": "int", "languages": "Lenguaje de los Mercaderes de las Dunas, K'rryl"},
 ]
 
-FIELD_KEYS = [
-    "Rank", "Traits", "Cost", "Actions", "Trigger", "Range",
-    "Area and Targets", "Area and targets", "Area", "Targets",
-    "Saving Throw and Duration", "Saving Throw", "Duration",
+# Rank no va en el cuerpo: si aparece, es el siguiente poder.
+BODY_FIELD_KEYS = [
+    "Traits", "Cost", "Actions", "Trigger", "Range",
+    "Area and Targets", "Area and targets", "Area", "Targets", "Target",
+    "Saving Throw and Duration", "Saving Throw", "Duration", "Difficulty",
 ]
+
+SKIP_NAME_PREFIXES = (
+    "Rank:", "Traits:", "Cost:", "Actions:", "Trigger:", "Range:",
+    "Area", "Targets:", "Target:", "Saving Throw", "Duration:", "Heightened",
+    "Foco:", "Debilidad:", "Narrativa:", "Difficulty:", "Key Ability:",
+    "Poderes Rank", "Poderes de Rank", "Impulsos", "Disciplina ",
+    "En combate", "Fuera de combate",
+)
 
 TIER_RE = re.compile(r"\((?:[^\w\s)]*\s*)?(Normal|Intense|Difficult)\)")
 RANK_RE = re.compile(r"Rank:\s*([A-Za-z]+)\s*(\d+)")
+TIER_WORD_RE = re.compile(r"(Normal|Intense|Difficult)")
 
 
 def load_doc() -> str:
@@ -101,78 +111,163 @@ def find_line(lines, pattern, start=0):
     return -1
 
 
-def parse_field_line(line: str):
-    for key in FIELD_KEYS:
+def parse_body_field(line: str):
+    for key in BODY_FIELD_KEYS:
         if line.startswith(key + ":"):
             return key, line[len(key) + 1:].strip()
     return None, None
 
 
+def _next_content(lines, i, end):
+    j = i
+    while j < end:
+        if lines[j].strip():
+            return j
+        j += 1
+    return -1
+
+
+def power_header_at(lines, i, end):
+    """Nombre del poder, con 'Difficulty:' opcional entre el titulo y 'Rank:'."""
+    name = lines[i].strip()
+    if not name or len(name) > 80:
+        return None
+    if name.startswith("<") or name in ("—", "-"):
+        return None
+    if any(name.startswith(p) for p in SKIP_NAME_PREFIXES):
+        return None
+    j = _next_content(lines, i + 1, end)
+    if j < 0:
+        return None
+    nxt = lines[j].strip()
+    if nxt.startswith("Difficulty:"):
+        j = _next_content(lines, j + 1, end)
+        if j < 0:
+            return None
+        nxt = lines[j].strip()
+    if nxt.startswith("Rank:") and RANK_RE.search(nxt):
+        return name, j
+    return None
+
+
+def normalize_bullet(line: str) -> str:
+    raw = line.rstrip()
+    m = re.match(r"^[\s\u00a0]*[\*\u2022]\s+(.*)$", raw)
+    if m:
+        return "* " + m.group(1).strip()
+    return raw.strip()
+
+
+def assemble_description(desc_lines):
+    """Orden fijo: efecto mecanico, luego Foco / Debilidad / Narrativa si tienen texto."""
+    body = []
+    foco = debilidad = narrativa = ""
+    for ln in desc_lines:
+        s = ln.strip()
+        if s.startswith("Foco:"):
+            foco = s[5:].strip()
+            continue
+        if s.startswith("Debilidad:"):
+            debilidad = s[10:].strip()
+            continue
+        if s.startswith("Narrativa:"):
+            narrativa = s[10:].strip()
+            continue
+        if s in ("—", "-", "Heightened: —", "Heightened: -"):
+            continue
+        if "escripci" in s.lower() and s.startswith("<"):
+            continue
+        body.append(normalize_bullet(ln))
+    text = re.sub(r"\n{3,}", "\n\n", "\n".join(body)).strip()
+    extras = []
+    if foco:
+        extras.append(f"**Foco:** {foco}")
+    if debilidad:
+        extras.append(f"**Debilidad:** {debilidad}")
+    if narrativa:
+        extras.append(f"**Narrativa:** {narrativa}")
+    if extras:
+        text = (text + "\n\n" + "\n".join(extras)).strip()
+    return text
+
+
+def apply_power_field(power, key, val):
+    if key == "Traits":
+        power["traits"] = val
+    elif key == "Cost":
+        power["cost_raw"] = val
+        nums = re.findall(r"\d+", val)
+        power["cost"] = int(nums[0]) if nums else None
+    elif key == "Actions":
+        power["actions"] = val
+    elif key == "Trigger":
+        power["trigger"] = val
+    elif key == "Range":
+        power["range"] = val
+    elif key in ("Area and Targets", "Area and targets", "Area", "Targets", "Target"):
+        power["area"] = (power["area"] + " " + val).strip()
+    elif key == "Duration":
+        power["duration"] = val
+    elif key in ("Saving Throw", "Saving Throw and Duration"):
+        power["save"] = val
+    elif key == "Difficulty":
+        tm = TIER_WORD_RE.search(val)
+        if tm and not power["tier"]:
+            power["tier"] = tm.group(1)
+
+
 def parse_powers(lines, start, end, discipline):
-    """Un poder comienza en una linea cuyo siguiente renglon empieza con 'Rank:'."""
+    """Un poder es un titulo seguido (opcionalmente de Difficulty:) de una linea Rank:."""
     powers = []
     i = start
     while i < end - 1:
-        name = lines[i].strip()
-        nxt = lines[i + 1].strip()
-        if name and not name.startswith("Rank:") and nxt.startswith("Rank:") and RANK_RE.search(nxt):
-            m = RANK_RE.search(nxt)
-            rank = int(m.group(2))
-            tier_m = TIER_RE.search(nxt)
-            power = {
-                "name": name, "discipline": discipline, "rank": rank,
-                "tier": tier_m.group(1) if tier_m else None,
-                "traits": "", "cost_raw": "", "cost": None, "actions": "",
-                "range": "", "area": "", "duration": "", "save": "",
-                "trigger": "", "description": [], "heightened": [],
-            }
-            j = i + 2
-            in_fields = True
-            while j < end:
-                ln = lines[j].strip()
-                # siguiente poder
-                if j + 1 < end and ln and not ln.startswith(("Rank:", "Heightened")) \
-                        and lines[j + 1].strip().startswith("Rank:") and RANK_RE.search(lines[j + 1].strip()):
-                    break
-                key, val = parse_field_line(ln)
-                if in_fields and key:
-                    if key == "Traits":
-                        power["traits"] = val
-                    elif key == "Cost":
-                        power["cost_raw"] = val
-                        nums = re.findall(r"\d+", val)
-                        power["cost"] = int(nums[0]) if nums else None
-                    elif key == "Actions":
-                        power["actions"] = val
-                    elif key == "Trigger":
-                        power["trigger"] = val
-                    elif key == "Range":
-                        power["range"] = val
-                    elif key in ("Area and Targets", "Area and targets", "Area", "Targets"):
-                        power["area"] = (power["area"] + " " + val).strip()
-                    elif key == "Duration":
-                        power["duration"] = val
-                    elif key == "Saving Throw":
-                        power["save"] = val
-                    elif key == "Saving Throw and Duration":
-                        power["save"] = val
-                elif ln.startswith("Heightened"):
-                    in_fields = False
-                    power["heightened"].append(ln)
-                elif ln.startswith(("Foco:", "Debilidad:", "Narrativa:")):
-                    in_fields = False
-                    power["description"].append(ln)
-                elif ln:
-                    in_fields = False
-                    power["description"].append(lines[j].rstrip())
-                j += 1
-            power["description"] = "\n".join(power["description"]).strip()
-            power["heightened"] = "\n".join(power["heightened"]).strip()
-            if power["description"] != "<Descripción>" and "<Descripci" not in power["description"]:
-                powers.append(power)
-            i = j
-        else:
+        header = power_header_at(lines, i, end)
+        if not header:
             i += 1
+            continue
+        name, rank_idx = header
+        nxt = lines[rank_idx].strip()
+        m = RANK_RE.search(nxt)
+        rank = int(m.group(2))
+        tier_m = TIER_RE.search(nxt)
+        tier = tier_m.group(1) if tier_m else None
+        if not tier:
+            for k in range(i + 1, rank_idx):
+                dm = TIER_WORD_RE.search(lines[k])
+                if dm:
+                    tier = dm.group(1)
+                    break
+        power = {
+            "name": name, "discipline": discipline, "rank": rank, "tier": tier,
+            "traits": "", "cost_raw": "", "cost": None, "actions": "",
+            "range": "", "area": "", "duration": "", "save": "",
+            "trigger": "", "description": [], "heightened": [],
+        }
+        j = rank_idx + 1
+        in_fields = True
+        desc_lines = []
+        while j < end:
+            if power_header_at(lines, j, end):
+                break
+            ln = lines[j].strip()
+            key, val = parse_body_field(ln)
+            if in_fields and key:
+                apply_power_field(power, key, val)
+            elif ln.startswith("Heightened"):
+                in_fields = False
+                if not re.match(r"Heightened:\s*[—\-–]\s*$", ln):
+                    power["heightened"].append(ln)
+            elif ln:
+                in_fields = False
+                desc_lines.append(lines[j])
+            elif desc_lines:
+                desc_lines.append("")
+            j += 1
+        power["description"] = assemble_description(desc_lines)
+        power["heightened"] = "\n".join(power["heightened"]).strip()
+        if power["description"] and "<Descripci" not in power["description"]:
+            powers.append(power)
+        i = j
     return powers
 
 
@@ -212,8 +307,125 @@ def parse_wild_talent_table(lines, header_idx, rank):
     return entries
 
 
+def detect_gdoc_table(lines, i):
+    """Google Docs txt: primera celda sin tab; el resto de celdas van con tab al inicio."""
+    if i + 1 >= len(lines) or not lines[i + 1].startswith("\t"):
+        return None
+    first = lines[i].strip()
+    second = lines[i + 1].strip()
+    ncols = None
+    if first == "Disciplina" and second == "Key Ability":
+        ncols = 6
+    elif first == "Level" and second == "Gains":
+        ncols = 2
+    elif first == "Primary Discipline" and second == "Primary Save":
+        ncols = 4
+    elif first == "Level" and "Psionic Attack" in second:
+        ncols = 2
+    elif first == "Level" and second == "Improvement":
+        ncols = 2
+    elif first == "Level" and second == "Impulse":
+        ncols = 11
+    else:
+        return None
+    cells = [first]
+    j = i + 1
+    while j < len(lines):
+        raw = lines[j]
+        if raw.startswith("\t"):
+            cells.append(raw.strip())
+            j += 1
+            continue
+        if not raw.strip():
+            j += 1
+            break
+        break
+    return ncols, cells, j
+
+
+def cells_to_markdown_table(ncols, cells):
+    while cells and cells[-1] == "":
+        cells.pop()
+    full = (len(cells) // ncols) * ncols
+    leftover = cells[full:]
+    rows = [cells[k:k + ncols] for k in range(0, full, ncols)]
+    if not rows:
+        return [], leftover
+    header = rows[0]
+    out = [
+        "",
+        "| " + " | ".join(header) + " |",
+        "| " + " | ".join("---" for _ in header) + " |",
+    ]
+    for row in rows[1:]:
+        while len(row) < ncols:
+            row.append("")
+        out.append("| " + " | ".join(row) + " |")
+    out.append("")
+    return out, leftover
+
+
+def format_gdoc_tables(lines):
+    out = []
+    i = 0
+    n = len(lines)
+    while i < n:
+        spec = detect_gdoc_table(lines, i)
+        if spec:
+            ncols, cells, nxt = spec
+            table, leftover = cells_to_markdown_table(ncols, cells)
+            out.extend(table)
+            for cell in leftover:
+                if cell:
+                    out.append(cell)
+            i = nxt
+            continue
+        out.append(normalize_bullet(lines[i]) if lines[i].strip() else "")
+        i += 1
+    return out
+
+
 def section_text(lines, start, end):
-    return "\n".join(lines[start:end]).strip()
+    formatted = format_gdoc_tables(lines[start:end])
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(formatted)).strip()
+
+
+PSIONIC_FEATURE_HEADINGS = [
+    (r"^Naturaleza de los Poderes Psi[oó]nicos$", "Naturaleza de los Poderes Psiónicos", 1),
+    (r"^Psionic Focus Points \(PFP\)$", "Psionic Focus Points (PFP)", 1),
+    (r"^Key Ability por Disciplina$", "Key Ability por Disciplina", 1),
+    (r"^Psionic Class Progression", "Progresión de clase Psiónico", 1),
+    (r"^Nivel 1 — Fundación Mental$", "Fundación Mental", 1),
+    (r"^Initial Proficiencies$", "Initial Proficiencies", 1),
+    (r"^Powers$", "Poderes conocidos", 1),
+    (r"^Psionic Proficiency Scaling$", "Psionic Proficiency Scaling", 1),
+    (r"^Saving Throw Improvements$", "Saving Throw Improvements", 1),
+    (r"^Poderes de Rank 0$", "Impulsos psiónicos (Rank 0)", 1),
+]
+
+
+def parse_psionic_class_features(lines, start, end, conn):
+    """Caracteristicas de clase del manual psionico (no Psychic de AoN)."""
+    hits = []
+    for i in range(start, end):
+        s = lines[i].strip()
+        for rx, title, level in PSIONIC_FEATURE_HEADINGS:
+            if re.match(rx, s):
+                hits.append((i, title, level))
+                break
+    n = 0
+    for idx, (pos, title, level) in enumerate(hits):
+        stop = hits[idx + 1][0] if idx + 1 < len(hits) else end
+        content = section_text(lines, pos + 1, stop)
+        if not content or len(content) < 20:
+            continue
+        conn.execute(
+            "INSERT INTO house_rules (kind, title, content, data) VALUES (?,?,?,?)",
+            ("psionic_feature", title, content,
+             json.dumps({"level": level, "class": "Psiónico"}, ensure_ascii=False)),
+        )
+        n += 1
+    print(f"Características de clase Psiónico: {n}")
 
 
 # Orden de chequeo: del mas especifico al mas general
@@ -444,6 +656,10 @@ def main():
              f" | Traits: {', '.join(a['traits'])} | Idiomas: {a['languages']}",
              json.dumps(a, ensure_ascii=False)),
         )
+
+    # --- Caracteristicas de clase Psionico (house rules, no AoN) ---
+    if idx_psionics > 0 and idx_first_disc > idx_psionics:
+        parse_psionic_class_features(lines, idx_psionics, idx_first_disc, conn)
 
     # --- Info de disciplinas ---
     for d, info in DISCIPLINE_INFO.items():

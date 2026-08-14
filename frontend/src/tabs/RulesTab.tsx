@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import { Section } from "../components/common";
+import { HouseRuleMarkdown } from "../lib/markdown";
 import { ALLOWED_SOURCE_LABELS, ALLOWED_SOURCES_DRIVE } from "../lib/sources";
 
 export default function RulesTab() {
@@ -58,8 +59,8 @@ export default function RulesTab() {
         {open ? (
           <Section title={open.title}>
             <button className="small ghost" onClick={() => setOpen(null)}>Cerrar</button>
-            <div style={{ whiteSpace: "pre-wrap", maxHeight: "70vh", overflowY: "auto", marginTop: 8 }}>
-              {open.content}
+            <div style={{ maxHeight: "70vh", overflowY: "auto", marginTop: 8 }}>
+              <HouseRuleMarkdown md={open.content} />
             </div>
           </Section>
         ) : (
