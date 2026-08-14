@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.9.2] — 2026-08-13
+
+### Corregido
+- **Heal** ya no incluye el texto de **Heightened Senses**: el parser tomaba cualquier línea que empezara por "Heightened" como un heightened, no como un poder nuevo.
+
+## [1.9.1] — 2026-08-13
+
+### Corregido
+- **Flesh Armour** y otras tablas dentro de poderes: el export de Google Docs las partía en líneas sueltas; ahora se reconstruyen.
+
 ## [1.9.0] — 2026-08-13
 
 ### Corregido

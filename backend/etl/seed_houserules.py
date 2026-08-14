@@ -78,7 +78,7 @@ BODY_FIELD_KEYS = [
 
 SKIP_NAME_PREFIXES = (
     "Rank:", "Traits:", "Cost:", "Actions:", "Trigger:", "Range:",
-    "Area", "Targets:", "Target:", "Saving Throw", "Duration:", "Heightened",
+    "Area", "Targets:", "Target:", "Saving Throw", "Duration:", "Heightened:", "Heightened (",
     "Foco:", "Debilidad:", "Narrativa:", "Difficulty:", "Key Ability:",
     "Poderes Rank", "Poderes de Rank", "Impulsos", "Disciplina ",
     "En combate", "Fuera de combate",
@@ -162,7 +162,7 @@ def assemble_description(desc_lines):
     """Orden fijo: efecto mecanico, luego Foco / Debilidad / Narrativa si tienen texto."""
     body = []
     foco = debilidad = narrativa = ""
-    for ln in desc_lines:
+    for ln in format_gdoc_tables(desc_lines):
         s = ln.strip()
         if s.startswith("Foco:"):
             foco = s[5:].strip()
@@ -253,7 +253,7 @@ def parse_powers(lines, start, end, discipline):
             key, val = parse_body_field(ln)
             if in_fields and key:
                 apply_power_field(power, key, val)
-            elif ln.startswith("Heightened"):
+            elif ln.startswith("Heightened:") or ln.startswith("Heightened ("):
                 in_fields = False
                 if not re.match(r"Heightened:\s*[—\-–]\s*$", ln):
                     power["heightened"].append(ln)
@@ -307,12 +307,53 @@ def parse_wild_talent_table(lines, header_idx, rank):
     return entries
 
 
+def looks_like_table_data(cell: str) -> bool:
+    s = cell.strip()
+    return bool(s) and bool(re.match(r"^[+\-]?\d", s))
+
+
+def infer_table_ncols(first: str, tab_cells: list[str]) -> int | None:
+    """Cabecera = primera celda + celdas con tab hasta el primer valor numerico."""
+    if len(tab_cells) < 2:
+        return None
+    headers = [first]
+    for c in tab_cells:
+        if looks_like_table_data(c) or len(c) > 60:
+            break
+        headers.append(c)
+        if len(headers) > 12:
+            break
+    ncols = len(headers)
+    if ncols < 2:
+        return None
+    if 1 + len(tab_cells) < ncols * 2:
+        return None
+    return ncols
+
+
 def detect_gdoc_table(lines, i):
-    """Google Docs txt: primera celda sin tab; el resto de celdas van con tab al inicio."""
-    if i + 1 >= len(lines) or not lines[i + 1].startswith("\t"):
+    """Google Docs txt: primera celda sin tab; el resto de celdas van con tab al inicio.
+    El export a menudo inserta lineas en blanco entre celdas."""
+    if lines[i].startswith("\t"):
         return None
     first = lines[i].strip()
-    second = lines[i + 1].strip()
+    if not first:
+        return None
+    cells = [first]
+    j = i + 1
+    while j < len(lines):
+        raw = lines[j]
+        if not raw.strip():
+            j += 1
+            continue
+        if raw.startswith("\t"):
+            cells.append(raw.strip())
+            j += 1
+            continue
+        break
+    if len(cells) < 3:
+        return None
+    second = cells[1]
     ncols = None
     if first == "Disciplina" and second == "Key Ability":
         ncols = 6
@@ -327,19 +368,9 @@ def detect_gdoc_table(lines, i):
     elif first == "Level" and second == "Impulse":
         ncols = 11
     else:
+        ncols = infer_table_ncols(cells[0], cells[1:])
+    if not ncols:
         return None
-    cells = [first]
-    j = i + 1
-    while j < len(lines):
-        raw = lines[j]
-        if raw.startswith("\t"):
-            cells.append(raw.strip())
-            j += 1
-            continue
-        if not raw.strip():
-            j += 1
-            break
-        break
     return ncols, cells, j
 
 
