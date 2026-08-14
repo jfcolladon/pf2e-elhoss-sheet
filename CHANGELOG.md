@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.9.5] — 2026-08-14
+
+### Corregido
+- Las descripciones de manifestaciones psiónicas se leen del Word de campana (ficha Rank/Traits/Cost a veces pegada en un párrafo).
+- Un poder conocido ya no muestra el texto de otro: se resuelve por nombre + disciplina + rank si el `id` del catálogo cambió al reseeder.
+
+## [1.9.4] — 2026-08-13
+
+### Corregido
+- Ficha de poderes psiónicos tabulada como en el manual (Rank, Cost, Actions, Range, Area, Duration, Saving Throw) en lugar de un renglón compacto.
+- Poderes con todos los campos pegados en la línea `Rank:` (p. ej. Kinetic Implosion, Momentum Shield) se parten y rellenan la ficha.
+- `Saving Throw and Duration` se separa en salvación y duración; los "—" vacíos ya no se muestran.
+- El fallback `houserules.txt` de Google Docs (`\\r\\r\\n`) ya no duplica líneas en blanco.
+
+## [1.9.3] — 2026-08-13
+
+### Corregido
+- **Warp Shield** y otros poderes al final de un rank: ya no incluyen el encabezado "Poderes Rank N" en la descripción.
+
 ## [1.9.2] — 2026-08-13
 
 ### Corregido

@@ -193,7 +193,20 @@ function KnownPowerCard({ powerId, name, rank, discipline, cost, wild, onUse, on
   return (
     <details className="power-card" onToggle={(e) => {
       if ((e.target as HTMLDetailsElement).open && !full && powerId > 0) {
-        api.powers().then((all) => setFull(all.find((x) => x.id === powerId) ?? null));
+        api.powers().then((all) => {
+          const byId = all.find((x) => x.id === powerId);
+          if (byId && byId.name === name) {
+            setFull(byId);
+            return;
+          }
+          setFull(
+            all.find((x) => x.name === name && x.discipline === discipline && x.rank === rank)
+            ?? all.find((x) => x.name === name && x.discipline === discipline)
+            ?? all.find((x) => x.name === name)
+            ?? byId
+            ?? null
+          );
+        });
       }
     }}>
       <summary>
@@ -216,21 +229,38 @@ function KnownPowerCard({ powerId, name, rank, discipline, cost, wild, onUse, on
 }
 
 export function PowerDetail({ p }: { p: PsionicPower }) {
+  const rankLabel = [p.discipline, p.rank].filter((x) => x !== "" && x !== null).join(" ");
+  const rows: [string, string][] = [];
+  if (rankLabel) rows.push(["Rank", p.tier ? `${rankLabel} (${p.tier})` : rankLabel]);
+  if (p.cost_raw) rows.push(["Cost", p.cost_raw]);
+  if (p.actions) rows.push(["Actions", p.actions]);
+  if (p.trigger) rows.push(["Trigger", p.trigger]);
+  if (p.range) rows.push(["Range", p.range]);
+  if (p.area) rows.push(["Area and Targets", p.area]);
+  if (p.duration) rows.push(["Duration", p.duration]);
+  if (p.save) rows.push(["Saving Throw", p.save]);
   return (
     <div>
-      <div className="row" style={{ marginBottom: 4 }}>
+      <div className="row" style={{ marginBottom: 6 }}>
         {p.traits.split(",").map((t) => t.trim()).filter(Boolean).map((t) => <span key={t} className="trait-chip">{t}</span>)}
         {p.tier && <span className={`badge tier-${p.tier}`}>{p.tier}</span>}
       </div>
-      <p className="muted">
-        <b>Costo:</b> {p.cost_raw || "—"} · <b>Acciones:</b> {p.actions || "—"} · <b>Alcance:</b> {p.range || "—"}
-        {p.area && <> · <b>Área/objetivos:</b> {p.area}</>}
-        {p.duration && <> · <b>Duración:</b> {p.duration}</>}
-        {p.save && <> · <b>Salvación:</b> {p.save}</>}
-        {p.trigger && <> · <b>Trigger:</b> {p.trigger}</>}
-      </p>
+      {rows.length > 0 && (
+        <table className="power-statblock">
+          <tbody>
+            {rows.map(([k, v]) => (
+              <tr key={k}><th>{k}</th><td>{v}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      )}
       <HouseRuleMarkdown md={p.description} />
-      {p.heightened && <HouseRuleMarkdown md={p.heightened} />}
+      {p.heightened && (
+        <div className="power-heightened">
+          <div className="h-label">Heightened</div>
+          <HouseRuleMarkdown md={p.heightened} />
+        </div>
+      )}
     </div>
   );
 }

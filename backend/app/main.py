@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from .allowed_sources import ALLOWED_SOURCE_LABELS, ALLOWED_SOURCES_SUMMARY
 from .db import get_conn, init_db
 
-app = FastAPI(title="Hoja de Personaje PF2e - Elhoss", version="1.9.2")
+app = FastAPI(title="Hoja de Personaje PF2e - Elhoss", version="1.9.5")
 
 app.add_middleware(
     CORSMiddleware,
@@ -269,14 +269,62 @@ def create_character(payload: dict):
     return {"id": cid}
 
 
+def remap_known_powers(data: dict, conn) -> dict:
+    """Tras reseeder el catalogo los id cambian; el nombre/disciplina/rank no."""
+    ps = data.get("psionics") or {}
+    known = ps.get("powers") or []
+    if not known:
+        return data
+    rows = conn.execute(
+        "SELECT id, name, discipline, rank FROM psionic_powers"
+    ).fetchall()
+    by_id = {r["id"]: r for r in rows}
+    by_key = {(r["name"].lower(), r["discipline"], r["rank"]): r for r in rows}
+    by_name: dict[str, list] = {}
+    for r in rows:
+        by_name.setdefault(r["name"].lower(), []).append(r)
+    changed = False
+    for p in known:
+        name = str(p.get("name") or "")
+        disc = p.get("discipline") or ""
+        rank = p.get("rank")
+        rid = p.get("powerId")
+        row = by_id.get(rid) if rid else None
+        if row is not None and row["name"] == name:
+            continue
+        match = by_key.get((name.lower(), disc, rank))
+        if match is None:
+            cands = by_name.get(name.lower()) or []
+            if disc:
+                cands = [x for x in cands if x["discipline"] == disc] or cands
+            if rank is not None:
+                ranked = [x for x in cands if x["rank"] == rank]
+                if ranked:
+                    cands = ranked
+            match = cands[0] if len(cands) == 1 else None
+        if match is None:
+            continue
+        p["powerId"] = match["id"]
+        p["discipline"] = match["discipline"]
+        p["rank"] = match["rank"]
+        if match["name"] != name:
+            p["name"] = match["name"]
+        changed = True
+    if changed:
+        data["psionics"] = {**ps, "powers": known}
+    return data
+
+
 @app.get("/api/v1/characters/{cid}")
 def get_character(cid: int):
     conn = get_conn()
     r = conn.execute("SELECT * FROM characters WHERE id=?", (cid,)).fetchone()
-    conn.close()
     if not r:
+        conn.close()
         raise HTTPException(404, "Personaje no encontrado")
     d = json.loads(r["data"])
+    d = remap_known_powers(d, conn)
+    conn.close()
     d["id"] = r["id"]
     return d
 

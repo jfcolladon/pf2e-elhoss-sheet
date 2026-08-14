@@ -306,6 +306,43 @@ details.power-card { border: 1px solid var(--line); border-radius: 6px; margin-b
 details.power-card > summary { padding: 6px 10px; cursor: pointer; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 details.power-card .pc-body { padding: 8px 12px; border-top: 1px solid var(--line); }
 
+.power-statblock {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 0 0 12px;
+  background: #fff;
+}
+.power-statblock th {
+  width: 11.5em;
+  text-align: left;
+  font-weight: 700;
+  color: var(--pf-red);
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  white-space: nowrap;
+}
+.power-statblock td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.power-heightened {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+}
+.power-heightened > .h-label {
+  font-family: "Cinzel", serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pf-red);
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
 .house-md { line-height: 1.55; }
 .house-md p { margin: 0 0 0.65em; }
 .house-md ul { margin: 0.25em 0 0.85em 1.25em; padding: 0; }
