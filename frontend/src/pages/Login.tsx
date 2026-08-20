@@ -1,6 +1,6 @@
 import { FormEvent, useState } from "react";
-import { api, ApiError } from "./api";
-import { setAuth } from "./auth";
+import { api, ApiError } from "../api";
+import { setAuth } from "../auth";
 
 export default function Login({ onSuccess }: { onSuccess: () => void }) {
   const [user, setUser] = useState("elhoss");
