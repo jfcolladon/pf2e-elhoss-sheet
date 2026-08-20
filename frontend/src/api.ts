@@ -1,20 +1,37 @@
+import { getAuthHeader } from "./auth";
 import { CatalogBrief, Character, PsionicPower } from "./types";
 
 const BASE = "/api/v1";
 
+export class ApiError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
+function authHeaders(extra?: Record<string, string>): Record<string, string> {
+  const headers: Record<string, string> = { ...(extra || {}) };
+  const auth = getAuthHeader();
+  if (auth) headers.Authorization = auth;
+  return headers;
+}
+
 async function get<T>(url: string): Promise<T> {
-  const r = await fetch(BASE + url);
-  if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+  const r = await fetch(BASE + url, { headers: authHeaders(), credentials: "same-origin" });
+  if (!r.ok) throw new ApiError(r.status, `${r.status} ${await r.text()}`);
   return r.json();
 }
 
 async function send<T>(method: string, url: string, body?: unknown): Promise<T> {
   const r = await fetch(BASE + url, {
     method,
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    credentials: "same-origin",
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
-  if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+  if (!r.ok) throw new ApiError(r.status, `${r.status} ${await r.text()}`);
   return r.json();
 }
 
@@ -77,5 +94,8 @@ export const api = {
   },
   deleteCharacter(id: number): Promise<{ ok: boolean }> {
     return send("DELETE", `/characters/${id}`);
+  },
+  health(): Promise<{ status: string; version: string; auth_required: boolean }> {
+    return get(`/health`);
   },
 };

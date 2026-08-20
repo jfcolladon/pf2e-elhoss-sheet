@@ -39,16 +39,20 @@ Todo contenido fuera de esos manuales aparece como "No permitido" con checkbox d
 ```
 d:\Pathfinder personaje\
 ├── Dockerfile              # 3 etapas: frontend build → seed DB → imagen final
-├── docker-compose.yml      # puerto 8080:8000, volumen pf2e_data:/data
-├── VERSION                 # 1.9.5
+├── docker-compose.yml      # puerto 8080:8000, volumen pf2e_data:/data (dev, sin auth)
+├── docker-compose.prod.yml # Caddy 80/443 + auth; API no publica 8000
+├── deploy/                 # Caddyfile, env.example, harden SSH, DuckDNS
+├── VERSION                 # 1.9.6
 ├── CHANGELOG.md
 ├── README.md
 ├── data/
-│   └── houserules.txt      # copia local del Google Doc (fallback ETL)
+│   └── houserules.txt      # copia local del Google Doc (fallback ETL; ancestrías)
+│   └── elhoss-houserules.docx  # Word de psiónica (fuente de poderes en el seed)
 ├── backend/
 │   ├── requirements.txt    # fastapi 0.115.12 · uvicorn 0.34.2 · httpx 0.28.1
 │   ├── app/
-│   │   ├── main.py         # FastAPI app (version="1.9.5"), endpoints REST + sirve /static
+│   │   ├── main.py         # FastAPI app (version="1.9.6"), endpoints REST + sirve /static
+│   │   ├── auth.py         # HTTP Basic si AUTH_PASSWORD está definido
 │   │   ├── db.py           # SQLite schema + get_conn()
 │   │   ├── allowed_sources.py  # ALLOWED_SOURCES frozenset (10 manuales)
 │   │   └── __init__.py
@@ -58,7 +62,7 @@ d:\Pathfinder personaje\
 │       ├── refresh_catalog.py  # Re-copia tablas catalog desde /seed/app.db al volumen persistente (sin tocar characters)
 │       └── __init__.py
 └── frontend/
-    ├── package.json        # pf2e-elhoss-sheet v1.9.5 · React 18 · Vite 5 · TypeScript
+    ├── package.json        # pf2e-elhoss-sheet v1.9.6 · React 18 · Vite 5 · TypeScript
     ├── vite.config.ts      # proxy /api → localhost:8000
     ├── index.html          # Google Fonts: Cinzel + Crimson Text
     └── src/
@@ -66,7 +70,7 @@ d:\Pathfinder personaje\
         ├── App.tsx             # Layout: topbar (versión + manuales autorizados) + <Outlet>
         ├── api.ts              # Cliente HTTP: catalog, houserules, character CRUD
         ├── types.ts            # Interfaces TS: Character, CampaignNote, FeatEntry, etc.
-        ├── version.ts          # APP_VERSION = "1.9.5"
+        ├── version.ts          # APP_VERSION = "1.9.6"
         ├── styles.css          # Tema PF2e (colores Cinzel/parchment), nota-cards, etc.
         ├── pages/
         │   ├── CharacterList.tsx   # Lista de personajes
@@ -118,7 +122,7 @@ docker exec pf2e-elhoss-sheet python etl/refresh_catalog.py
 
 | Endpoint | Descripción |
 |----------|-------------|
-| `GET /health` | Estado, versión, conteo de items |
+| `GET /health` | Estado, versión, conteo de items, `auth_required` (público) |
 | `GET /catalog/{type}` | Busca items SRD (q, level_min/max, trait, tradition, category, allowed_only) |
 | `GET /catalog/{type}/{uid}` | Detalle completo de un item |
 | `GET /psionics` | Lista poderes psiónicos (discipline, rank_max) |
@@ -244,7 +248,7 @@ cd backend && uvicorn app.main:app --reload  # requiere: pip install -r requirem
 
 - **Repositorio:** https://github.com/jfcolladon/pf2e-elhoss-sheet (público)
 - **Rama:** `master`
-- **Versión actual:** `1.9.5`
+- **Versión actual:** `1.9.6`
 - Los archivos de versión son: `VERSION`, `frontend/package.json`, `frontend/src/version.ts`, `backend/app/main.py` (parámetro `version=` del FastAPI constructor).
 - Al subir versión, actualizar los 4 archivos + entrada en `CHANGELOG.md`.
 
@@ -268,6 +272,7 @@ cd backend && uvicorn app.main:app --reload  # requiere: pip install -r requirem
 | 1.9.3 | 2026-08-13 | Warp Shield: se quita el encabezado "Poderes Rank N" de la descripción |
 | 1.9.4 | 2026-08-13 | Ficha psiónica tabulada; campos pegados en Rank: se parten |
 | 1.9.5 | 2026-08-14 | Poderes desde el Word; nombre y descripción ya no se cruzan |
+| 1.9.6 | 2026-08-20 | Auth por contraseña + Caddy/Let's Encrypt (prod) |
 
 ---
 
@@ -280,22 +285,24 @@ cd backend && uvicorn app.main:app --reload  # requiere: pip install -r requirem
 5. **ExtraCaster**: cada dedication caster genera una entrada separada con sus propios slots, known spells, tradición y proficiencia. No mezcla con el spellcasting principal.
 6. **Auto-save debounced**: 1 200 ms tras el último cambio. Indicador visual: "Guardado / Guardando… / Cambios sin guardar".
 7. **CRLF issue resuelto**: el `docker-entrypoint.sh` fue eliminado; la lógica de inicialización está inline en el `CMD` del Dockerfile.
-8. **Fuente de house rules**: el ETL intenta descargar el Google Doc; si falla, usa `/app/data/houserules.txt` (incluido en la imagen como fallback). Para actualizar el fallback: editar `data/houserules.txt` y rebuildar.
+8. **Fuente de house rules**: poderes y wild talents salen del Word `data/elhoss-houserules.docx`. Ancestrías/magia se bajan del Google Doc; si falla, `data/houserules.txt`.
 9. **Prerrequisitos de feats**: se evalúan en el frontend (`lib/prereqs.ts`) con el campo `prerequisite` de AoN. Texto libre no parseable = aviso, no bloqueo. Modo DM puede saltárselos. Feats de house rules no se comprueban.
-10. **Psiónica no cita AoN**: poderes y características de clase Psiónico salen solo del Google Doc de Elhoss. No se rellenan con texto de Psychic/spells de Archives of Nethys.
+10. **Psiónica no cita AoN**: poderes y características de clase Psiónico salen del Word/Google Doc de Elhoss. No se rellenan con texto de Psychic/spells de Archives of Nethys.
+11. **IDs de poderes**: el seed hace upsert por (nombre, disciplina, rank). La hoja resuelve un poder conocido por nombre si el `id` cambió.
+12. **Producción:** `AUTH_PASSWORD` activa HTTP Basic en la API y login en la UI. Caddy termina TLS. Local (`docker-compose.yml`) no define password.
 
 ---
 
 ## 12. Tareas pendientes conocidas / ideas futuras
-
 - [ ] Mejorar visualización de efectos de musa en FeatsTab (actualmente se aplican pero la UI podría mostrarlos más claramente).
 - [ ] Comprobar prerrequisitos de ancestry feats de house rules (hoy solo se filtran los del SRD).
 - [ ] Permitir añadir condiciones personalizadas (ahora solo hay checkbox de condiciones conocidas).
 - [ ] Exportar / imprimir hoja de personaje como PDF.
 - [ ] Soporte multi-personaje simultáneo (actualmente un personaje por sesión en la misma pestaña).
 - [ ] Añadir Thaumaturge, Inventor, Psychic, Magus como clases con perfiles completos en `CLASS_PROFILES`.
-- [x] Parser de poderes psiónicos: nombres, Difficulty, descripciones y tablas del manual (v1.9.0).
-- [ ] Auth básica si se expone más allá de la LAN local.
+- [x] Auth básica al publicar en Oracle (HTTP Basic + login; Caddy/HTTPS).
+- [x] Parser de poderes psiónicos: nombres, Difficulty, descripciones y tablas del manual (v1.9.0–1.9.5).
+- [x] Deploy Always Free AMD micro en Santiago. Pendiente DuckDNS (Let's Encrypt) y reintento A1.
 
 ---
 
@@ -306,3 +313,26 @@ cd backend && uvicorn app.main:app --reload  # requiere: pip install -r requirem
 - **Personaje activo:** Bardo con Dedication a Clérigo, Multifarious Muse
 - **House rules doc:** https://docs.google.com/document/d/16EmEq9_nEYG6o5xgtyvk1wodVfFIUD4E9Yf4qJuQLkM/edit
 - **Drive manuales:** https://drive.google.com/drive/u/0/folders/1CveoM7PWlSF8GWE16UltayP_3SzYLin_
+
+---
+
+## 14. Hosting Oracle Always Free (en curso)
+
+Always Free de compute **solo en la home region** (`sa-santiago-1`, un solo AD). Otra región no es Always Free.
+
+**VM:** `VM.Standard.E2.1.Micro` (x86, 1 GB + swap 4 GB) en `sa-santiago-1`. Ampere A1 sigue sin cupo. App en `/opt/elhoss`, volumen `pf2e_data`. Compose de producción: `docker-compose.prod.yml` (Caddy + auth). `deploy/.env` no va al git.
+
+SSH: `%USERPROFILE%\.ssh\elhoss-oracle` (passphrase) y `%USERPROFILE%\.ssh\elhoss-oracle-deploy` (sin passphrase). Usuario `ubuntu`.
+
+Pendiente de tu lado: DuckDNS (A record) para Let's Encrypt. Luego `SITE_DOMAIN` + `ACME_EMAIL` y recrear Caddy. Reintento A1 cuando haya cupo.
+
+**Secretos (nunca al git):**
+- `tentantinfo` — bloque `[DEFAULT]` de OCI.
+- `deploy/.env` — usuario/contraseña de la hoja, token DuckDNS.
+- `jcolladon@gmail.com-*.pem` — API keys Oracle.
+- Config local: `%USERPROFILE%\.oci\config` + `oci_api_key.pem`.
+
+**Red:** VCN `vcn-20260819-2146`, IGW, security list 22/80/443, subnet pública `10.0.0.0/24`. SSH se restringe a la IP de casa al desplegar.
+
+Para retomar: `@CONTEXT.md` + `@tentantinfo` (local, ignorado).
+

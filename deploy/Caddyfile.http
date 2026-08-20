@@ -1,0 +1,10 @@
+:80 {
+	encode gzip
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		X-Frame-Options DENY
+		-Server
+	}
+	reverse_proxy pf2e-sheet:8000
+}

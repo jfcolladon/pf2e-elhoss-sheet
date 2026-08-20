@@ -1,2 +1,2 @@
 /** Versión de la aplicación (sincronizada con VERSION en la raíz del repo). */
-export const APP_VERSION = "1.9.5";
+export const APP_VERSION = "1.9.6";

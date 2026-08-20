@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.6] — 2026-08-20
+
+### Añadido
+- Contraseña de acceso en producción (`AUTH_USER` / `AUTH_PASSWORD`). Local sigue abierto si no hay password.
+- Caddy delante de la API: HTTP o HTTPS con Let's Encrypt (`docker-compose.prod.yml`).
+- Login en la hoja y botón Salir. Health público indica `auth_required`.
+
 ## [1.9.5] — 2026-08-14
 
 ### Corregido

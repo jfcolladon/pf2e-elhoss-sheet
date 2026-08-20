@@ -26,3 +26,12 @@ Thumbs.db
 # Env
 .env
 .env.*
+
+# Claves Oracle / SSH / tenancy (nunca al repo)
+*.pem
+*.key
+tentantinfo
+tentantinfo.txt
+tenantinfo
+tenantinfo.txt
+.oci/

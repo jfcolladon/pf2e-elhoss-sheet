@@ -7,16 +7,20 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .allowed_sources import ALLOWED_SOURCE_LABELS, ALLOWED_SOURCES_SUMMARY
+from .auth import BasicAuthMiddleware, auth_required
 from .db import get_conn, init_db
 
-app = FastAPI(title="Hoja de Personaje PF2e - Elhoss", version="1.9.5")
+app = FastAPI(title="Hoja de Personaje PF2e - Elhoss", version="1.9.6")
 
+_cors = os.environ.get("CORS_ORIGINS", "*").strip()
+_cors_origins = ["*"] if _cors == "*" else [o.strip() for o in _cors.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_cors_origins,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+app.add_middleware(BasicAuthMiddleware)
 
 init_db()
 
@@ -366,6 +370,7 @@ def health():
         "srd_items": n,
         "srd_items_allowed": allowed,
         "psionic_powers": p,
+        "auth_required": auth_required(),
     }
 
 

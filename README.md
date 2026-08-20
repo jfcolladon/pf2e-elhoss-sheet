@@ -1,6 +1,6 @@
 # Hoja de Personaje PF2e — Elhoss Eastern Lands
 
-**Versión:** 1.9.5
+**Versión:** 1.9.6
 
 Aplicación web dockerizada de hoja de personaje para **Pathfinder 2e (legacy)**, con contenido **permitido** de los manuales oficiales de la campaña más las **house rules** de **Elhoss Eastern Lands** (psiónica salvaje estilo Dark Sun).
 
@@ -27,7 +27,17 @@ cd pf2e-elhoss-sheet
 docker compose up --build -d
 ```
 
-Abre en el navegador: **http://localhost:8080**
+Abre en el navegador: **http://localhost:8080** (sin contraseña; es el compose de desarrollo).
+
+### Producción (HTTPS + contraseña)
+
+```bash
+cp deploy/env.example deploy/.env
+# Editar AUTH_PASSWORD, ACME_EMAIL y, cuando exista, SITE_DOMAIN
+docker compose -f docker-compose.prod.yml --env-file deploy/.env up -d --build
+```
+
+Sin `SITE_DOMAIN`, Caddy sirve HTTP en el puerto 80 con login. Con un hostname (p. ej. DuckDNS) Caddy pide el certificado Let's Encrypt en 443. El contenedor de la API **no** publica el 8000 hacia internet.
 
 ### Comandos útiles
 
