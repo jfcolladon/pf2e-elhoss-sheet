@@ -25,7 +25,9 @@ export default function Login({ onSuccess }: { onSuccess: () => void }) {
       }
       onSuccess();
     } catch (err) {
-      if (err instanceof ApiError && (err.status === 401 || err.status === 400)) {
+      if (err instanceof ApiError && err.status === 429) {
+        setError("Demasiados intentos. Esperá un minuto y probá de nuevo.");
+      } else if (err instanceof ApiError && (err.status === 401 || err.status === 400)) {
         setError("Usuario o contraseña incorrectos.");
       } else {
         setError("No se pudo entrar. Probá de nuevo.");

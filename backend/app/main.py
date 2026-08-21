@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .allowed_sources import ALLOWED_SOURCE_LABELS, ALLOWED_SOURCES_SUMMARY
 from .auth import AUTH_MULTI, AUTH_USER, BasicAuthMiddleware, auth_required
+from .ratelimit import RateLimitMiddleware
 from .db import get_conn, init_db
 from .progression import granted_features
 from .users import (
@@ -27,6 +28,7 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 app.add_middleware(BasicAuthMiddleware)
+app.add_middleware(RateLimitMiddleware)
 
 init_db()
 ensure_users()

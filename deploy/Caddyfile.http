@@ -1,10 +1,15 @@
 :80 {
 	encode gzip
+	request_body {
+		max_size 2MB
+	}
 	header {
 		X-Content-Type-Options nosniff
 		Referrer-Policy no-referrer
 		X-Frame-Options DENY
 		-Server
 	}
-	reverse_proxy pf2e-sheet:8000
+	reverse_proxy pf2e-sheet:8000 {
+		header_up X-Real-IP {remote_host}
+	}
 }
