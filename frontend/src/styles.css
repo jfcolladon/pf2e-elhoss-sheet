@@ -437,17 +437,16 @@ details.power-card .pc-body { padding: 8px 12px; border-top: 1px solid var(--lin
 .icon-btn.danger:hover { background: #fde4d8; }
 
 .btn-primary {
-  background: var(--accent);
-  color: #fff;
+  background: var(--pf-red);
+  color: #f3e6c8;
   border: none;
   border-radius: 5px;
   padding: 6px 16px;
   font-weight: 700;
   cursor: pointer;
   font-size: 0.9rem;
-  transition: filter .15s;
 }
-.btn-primary:hover { filter: brightness(1.15); }
+.btn-primary:hover { background: var(--pf-red-light); color: #f3e6c8; }
 
 @media (max-width: 860px) {
   .cols-3, .cols-4, .cols-6 { grid-template-columns: 1fr 1fr; }
