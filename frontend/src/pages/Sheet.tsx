@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../api";
-import { Character, defaultCharacter, migrateMoney } from "../types";
+import { Character, defaultCharacter, FeatEntry, migrateMoney } from "../types";
 import { migrateLanguages } from "../lib/languages";
+import { withProgression } from "../lib/progress";
 import MainTab from "../tabs/MainTab";
 import SkillsTab from "../tabs/SkillsTab";
 import FeatsTab from "../tabs/FeatsTab";
@@ -30,6 +31,7 @@ export default function Sheet() {
       const merged = { ...defaultCharacter(), ...data };
       merged.spellcasting = { ...defaultCharacter().spellcasting, ...data.spellcasting };
       merged.psionics = { ...defaultCharacter().psionics, ...data.psionics };
+      merged.deity = { ...defaultCharacter().deity, ...(data.deity || {}) };
       merged.muses = data.muses ?? [];
       merged.extraCasters = data.extraCasters ?? [];
       merged.campaignNotes = data.campaignNotes ?? [];
@@ -40,7 +42,7 @@ export default function Sheet() {
       if (!data.spellcasting?.ability) merged.spellcasting.ability = merged.clazz.keyAbility;
       if (!data.spellcasting?.tradition) merged.spellcasting.tradition = merged.clazz.tradition;
       if (!data.spellcasting?.castingType) merged.spellcasting.castingType = merged.clazz.castingType;
-      setC(merged);
+      withProgression(merged).then(setC).catch(() => setC(merged));
     });
   }, [cid]);
 
@@ -58,6 +60,18 @@ export default function Sheet() {
       return next;
     });
   }, [cid]);
+
+  useEffect(() => {
+    if (!c) return;
+    let dead = false;
+    withProgression(c).then((next) => {
+      if (dead) return;
+      const a = (next.feats || []).filter((f: FeatEntry) => f.granted).map((f: FeatEntry) => String(f.uid)).sort().join("|");
+      const b = (c.feats || []).filter((f: FeatEntry) => f.granted).map((f: FeatEntry) => String(f.uid)).sort().join("|");
+      if (a !== b) update(() => next);
+    }).catch(() => undefined);
+    return () => { dead = true; };
+  }, [c?.clazz.name, c?.ancestry.name, c?.level, c?.deity?.name]);
 
   if (!c) return <p>Cargando personaje…</p>;
 

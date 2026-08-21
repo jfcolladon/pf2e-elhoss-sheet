@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.10.2] — 2026-08-21
+
+### Corregido
+- Con `AUTH_MULTI`, la SPA carga sin el popup nativo de HTTP Basic, para que se vea **Crear cuenta**.
+
+## [1.10.1] — 2026-08-21
+
+### Añadido
+- Doctrinas de clérigo de Elhoss (credos, dominios, arma favorecida, edictos/anatemas y rasgo doctrinal) y el Dominio del Cosmos, solo si no estaban en el catálogo.
+- Habilidades ancestrales innatas que faltaban (Dwrvin, Thalan'dorœ, Yolquipan, Ghurim, Halfling, Semi-Gigante) además de las K'rryl.
+- Campo Doctrina/deidad en la hoja: al elegirla se otorga el rasgo doctrinal.
+
+## [1.10.0] — 2026-08-21
+
+### Añadido
+- Conjuros, rituales, feats Magifoqi y bloodlines de Elhoss desde el Google Doc, solo si no estaban en el catálogo. Ficha tipo psiónica (statblock + markdown de house rules).
+- Al elegir ancestry/clase o cambiar de nivel se otorgan características automáticas (class features del SRD, features del Psiónico, habilidades ancestrales innatas).
+- Cuentas nuevas en producción (Oracle): registro con email y OTP. El usuario `elhoss` sigue igual. Docker local no usa multi-tenant.
+
 ## [1.9.6] — 2026-08-20
 
 ### Añadido

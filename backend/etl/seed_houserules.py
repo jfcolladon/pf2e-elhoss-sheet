@@ -997,6 +997,10 @@ def main():
         sections.append(("reference", "Wild Talents (Psiónica Salvaje)", full_lines, idx_full_wild, end_wild))
     if idx_magic > 0:
         sections.append(("reference", "Magia y Leylines", full_lines, idx_magic, len(full_lines)))
+
+    from parse_homebrew_magic import seed_homebrew_magic
+    seed_homebrew_magic(conn, full_lines)
+
     for kind, title, src, s, e in sections:
         conn.execute(
             "INSERT INTO house_rules (kind, title, content, data) VALUES (?,?,?,NULL)",

@@ -7,10 +7,12 @@ import Login from "./pages/Login";
 export default function AuthGate({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [needsLogin, setNeedsLogin] = useState(false);
+  const [allowRegister, setAllowRegister] = useState(false);
 
   const probe = useCallback(async () => {
     try {
       const health = await api.health();
+      setAllowRegister(!!health.auth_multi);
       if (!health.auth_required) {
         setNeedsLogin(false);
         setReady(true);
@@ -47,7 +49,7 @@ export default function AuthGate({ children }: { children: ReactNode }) {
     );
   }
   if (needsLogin) {
-    return <Login onSuccess={() => setNeedsLogin(false)} />;
+    return <Login onSuccess={() => setNeedsLogin(false)} allowRegister={allowRegister} />;
   }
   return <>{children}</>;
 }

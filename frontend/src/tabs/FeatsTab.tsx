@@ -4,7 +4,7 @@ import { CatalogBrief } from "../types";
 import { UpdateFn } from "../pages/Sheet";
 import { Section, Modal, CatalogSearch, HouseRulePicker, AllowedBadge } from "../components/common";
 import { AonMarkdown, HouseRuleMarkdown } from "../lib/markdown";
-import { CASTER_DEDICATIONS, detectCaster, museGrant, detectSpellTier, syncFeatEffects, applyMuseSelection, isBard, isMultifariousMuseFeat, needsSecondMuse, maxMuses } from "../lib/rules";
+import { CASTER_DEDICATIONS, detectCaster, museGrant, detectSpellTier, syncFeatEffects, applyMuseSelection, isBard, isDivineDevotee, isMultifariousMuseFeat, needsSecondMuse, maxMuses } from "../lib/rules";
 import { ALLOWED_SOURCES_SHORT } from "../lib/sources";
 import { Character, FeatEntry } from "../types";
 
@@ -85,12 +85,16 @@ export default function FeatsTab({ c, update }: { c: Character; update: UpdateFn
   };
 
   const showDetail = async (f: FeatEntry) => {
-    if (!f.uid) {
+    if (!f.uid || f.uid.startsWith("house:")) {
       setDetail({ name: f.name, md: f.note || "(Sin descripción)", house: true });
       return;
     }
     const it = await api.item(f.uid);
-    setDetail({ name: f.name, md: String(it.markdown ?? ""), house: false });
+    setDetail({
+      name: f.name,
+      md: String(it.markdown ?? f.note ?? ""),
+      house: Boolean(it.house),
+    });
   };
 
   return (
@@ -247,6 +251,25 @@ export default function FeatsTab({ c, update }: { c: Character; update: UpdateFn
                   }}
                 />
               ) : (
+                <>
+                  {isDivineDevotee(c.clazz.name) && featureType === "class-option" && (
+                    <>
+                      <h4>Dominios homebrew de Elhoss</h4>
+                      <HouseRulePicker
+                        kind="cleric_domain"
+                        pickLabel="Añadir"
+                        onPick={(entry) => {
+                          addFeat({
+                            uid: null, name: entry.title, category: "feature",
+                            level: Number(entry.data?.level ?? 1),
+                            allowed: true, dmApproved: false, note: entry.content,
+                          });
+                          setAdding(null);
+                        }}
+                      />
+                      <h4 style={{ marginTop: 12 }}>SRD / catálogo</h4>
+                    </>
+                  )}
                 <CatalogSearch
                   type={featureType}
                   category={featureType === "class-option" && isBard(c.clazz.name) ? "bard muse" : undefined}
@@ -265,11 +288,12 @@ export default function FeatsTab({ c, update }: { c: Character; update: UpdateFn
                     }
                   }}
                 />
+                </>
               )}
               <p className="muted">
                 {c.clazz.isPsionic && featureType === "class-feature"
                   ? "La clase Psiónico es house rule de Elhoss. Las características salen del manual de campaña, no de Psychic de Archives of Nethys."
-                  : "Subclase incluye musa de bardo, bloodlines, instintos, órdenes, etc. (busca p. ej. \"enigma\", \"maestro\"). Al elegir una musa se añaden su feat y conjuro otorgados."}
+                  : "Subclase incluye musa de bardo, bloodlines, instintos, órdenes y dominios de clérigo (busca p. ej. \"cosmos\"). Al elegir una musa se añaden su feat y conjuro otorgados."}
               </p>
               {museWarning && <p className="warn">⚠ {museWarning}</p>}
             </>

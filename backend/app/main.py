@@ -1,16 +1,23 @@
 import json
 import os
+import re
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .allowed_sources import ALLOWED_SOURCE_LABELS, ALLOWED_SOURCES_SUMMARY
-from .auth import BasicAuthMiddleware, auth_required
+from .auth import AUTH_MULTI, AUTH_USER, BasicAuthMiddleware, auth_required
 from .db import get_conn, init_db
+from .progression import granted_features
+from .users import (
+    consume_otp, create_session, create_unverified_user, ensure_legacy_user,
+    get_user_by_email, get_user_by_username, mark_verified, send_otp_email,
+    store_otp, verify_password,
+)
 
-app = FastAPI(title="Hoja de Personaje PF2e - Elhoss", version="1.9.6")
+app = FastAPI(title="Hoja de Personaje PF2e - Elhoss", version="1.10.2")
 
 _cors = os.environ.get("CORS_ORIGINS", "*").strip()
 _cors_origins = ["*"] if _cors == "*" else [o.strip() for o in _cors.split(",") if o.strip()]
@@ -23,6 +30,7 @@ app.add_middleware(
 app.add_middleware(BasicAuthMiddleware)
 
 init_db()
+ensure_legacy_user()
 
 TYPE_ALIASES = {
     "ancestry": "ancestry", "heritage": "heritage", "background": "background",
@@ -32,6 +40,10 @@ TYPE_ALIASES = {
     "item": "item", "equipment": "item", "class-feature": "class feature", "deity": "deity",
     "class-option": "class-option",
 }
+
+
+def re_email(email: str) -> bool:
+    return bool(re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email))
 
 
 def _normalize_prereq(raw) -> str:
@@ -242,10 +254,28 @@ def get_houserule(rule_id: int):
 
 # ---------------- Personajes ----------------
 
+def _actor(request: Request):
+    return getattr(request.state, "user", None)
+
+
+def _can_access_row(request: Request, user_id) -> bool:
+    user = _actor(request)
+    if not user or user.get("is_legacy"):
+        return True
+    return user_id == user["id"]
+
+
 @app.get("/api/v1/characters")
-def list_characters():
+def list_characters(request: Request):
     conn = get_conn()
-    rows = conn.execute("SELECT id, name, data, updated_at FROM characters ORDER BY updated_at DESC").fetchall()
+    user = _actor(request)
+    if user and not user.get("is_legacy"):
+        rows = conn.execute(
+            "SELECT id, name, data, updated_at FROM characters WHERE user_id=? ORDER BY updated_at DESC",
+            (user["id"],),
+        ).fetchall()
+    else:
+        rows = conn.execute("SELECT id, name, data, updated_at FROM characters ORDER BY updated_at DESC").fetchall()
     conn.close()
     out = []
     for r in rows:
@@ -260,12 +290,14 @@ def list_characters():
 
 
 @app.post("/api/v1/characters")
-def create_character(payload: dict):
+def create_character(payload: dict, request: Request):
     name = payload.get("name") or "Sin nombre"
     conn = get_conn()
+    user = _actor(request)
+    uid = user["id"] if user else None
     cur = conn.execute(
-        "INSERT INTO characters (name, data) VALUES (?,?)",
-        (name, json.dumps(payload, ensure_ascii=False)),
+        "INSERT INTO characters (name, data, user_id) VALUES (?,?,?)",
+        (name, json.dumps(payload, ensure_ascii=False), uid),
     )
     conn.commit()
     cid = cur.lastrowid
@@ -320,10 +352,13 @@ def remap_known_powers(data: dict, conn) -> dict:
 
 
 @app.get("/api/v1/characters/{cid}")
-def get_character(cid: int):
+def get_character(cid: int, request: Request):
     conn = get_conn()
     r = conn.execute("SELECT * FROM characters WHERE id=?", (cid,)).fetchone()
     if not r:
+        conn.close()
+        raise HTTPException(404, "Personaje no encontrado")
+    if not _can_access_row(request, r["user_id"] if "user_id" in r.keys() else None):
         conn.close()
         raise HTTPException(404, "Personaje no encontrado")
     d = json.loads(r["data"])
@@ -334,9 +369,16 @@ def get_character(cid: int):
 
 
 @app.put("/api/v1/characters/{cid}")
-def update_character(cid: int, payload: dict):
+def update_character(cid: int, payload: dict, request: Request):
     name = payload.get("name") or "Sin nombre"
     conn = get_conn()
+    row = conn.execute("SELECT user_id FROM characters WHERE id=?", (cid,)).fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(404, "Personaje no encontrado")
+    if not _can_access_row(request, row["user_id"]):
+        conn.close()
+        raise HTTPException(404, "Personaje no encontrado")
     cur = conn.execute(
         "UPDATE characters SET name=?, data=?, updated_at=datetime('now') WHERE id=?",
         (name, json.dumps(payload, ensure_ascii=False), cid),
@@ -349,8 +391,15 @@ def update_character(cid: int, payload: dict):
 
 
 @app.delete("/api/v1/characters/{cid}")
-def delete_character(cid: int):
+def delete_character(cid: int, request: Request):
     conn = get_conn()
+    row = conn.execute("SELECT user_id FROM characters WHERE id=?", (cid,)).fetchone()
+    if not row:
+        conn.close()
+        return {"ok": True}
+    if not _can_access_row(request, row["user_id"]):
+        conn.close()
+        raise HTTPException(404, "Personaje no encontrado")
     conn.execute("DELETE FROM characters WHERE id=?", (cid,))
     conn.commit()
     conn.close()
@@ -371,7 +420,91 @@ def health():
         "srd_items_allowed": allowed,
         "psionic_powers": p,
         "auth_required": auth_required(),
+        "auth_multi": AUTH_MULTI,
     }
+
+
+@app.get("/api/v1/progression")
+def progression(
+    class_name: str = "",
+    ancestry: str = "",
+    level: int = 1,
+    custom_ancestry: bool = False,
+    deity: str = "",
+):
+    conn = get_conn()
+    items = granted_features(conn, class_name, ancestry, level, custom_ancestry, deity)
+    conn.close()
+    return {"features": items}
+
+
+@app.post("/api/v1/auth/register")
+def auth_register(payload: dict):
+    if not AUTH_MULTI:
+        raise HTTPException(404, "Registro no habilitado")
+    email = str(payload.get("email") or "").strip().lower()
+    username = str(payload.get("username") or "").strip()
+    password = str(payload.get("password") or "")
+    if not re_email(email):
+        raise HTTPException(400, "Email invalido")
+    if len(username) < 3 or not re.match(r"^[a-zA-Z0-9._-]{3,32}$", username):
+        raise HTTPException(400, "Usuario: 3-32 letras, numeros, punto, _ o -")
+    if username.lower() == AUTH_USER.lower():
+        raise HTTPException(400, "Ese usuario ya existe")
+    if len(password) < 8:
+        raise HTTPException(400, "La contraseña debe tener al menos 8 caracteres")
+    if get_user_by_email(email) or get_user_by_username(username):
+        raise HTTPException(400, "Email o usuario ya registrado")
+    create_unverified_user(email, username, password)
+    code = store_otp(email, "register")
+    try:
+        send_otp_email(email, code)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(503, f"No se pudo enviar el correo: {e}") from e
+    return {"ok": True, "email": email}
+
+
+@app.post("/api/v1/auth/resend-otp")
+def auth_resend(payload: dict):
+    if not AUTH_MULTI:
+        raise HTTPException(404, "Registro no habilitado")
+    email = str(payload.get("email") or "").strip().lower()
+    user = get_user_by_email(email)
+    if not user or user.get("email_verified"):
+        return {"ok": True}
+    code = store_otp(email, "register")
+    try:
+        send_otp_email(email, code)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(503, f"No se pudo enviar el correo: {e}") from e
+    return {"ok": True}
+
+
+@app.post("/api/v1/auth/verify")
+def auth_verify(payload: dict):
+    if not AUTH_MULTI:
+        raise HTTPException(404, "Registro no habilitado")
+    email = str(payload.get("email") or "").strip().lower()
+    code = str(payload.get("code") or "").strip()
+    if not consume_otp(email, code, "register"):
+        raise HTTPException(400, "Codigo invalido o vencido")
+    mark_verified(email)
+    user = get_user_by_email(email)
+    token = create_session(user["id"])
+    return {"ok": True, "token": token, "username": user["username"]}
+
+
+@app.post("/api/v1/auth/login")
+def auth_login(payload: dict):
+    if not AUTH_MULTI:
+        raise HTTPException(404, "Login de cuenta no habilitado")
+    ident = str(payload.get("username") or payload.get("email") or "").strip()
+    password = str(payload.get("password") or "")
+    user = get_user_by_email(ident.lower()) if "@" in ident else get_user_by_username(ident)
+    if not user or not user.get("email_verified") or not verify_password(password, user["password_hash"]):
+        raise HTTPException(401, "Usuario o contraseña incorrectos")
+    token = create_session(user["id"])
+    return {"ok": True, "token": token, "username": user["username"]}
 
 
 @app.get("/api/v1/allowed-sources")

@@ -6,6 +6,8 @@ services:
       - "8000"
     env_file:
       - deploy/.env
+    environment:
+      AUTH_MULTI: "1"
     volumes:
       - pf2e_data:/data
     restart: unless-stopped

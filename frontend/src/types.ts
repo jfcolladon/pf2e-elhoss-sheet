@@ -43,12 +43,13 @@ export interface Strike {
 export interface FeatEntry {
   uid: string | null;
   name: string;
-  category: string; // ancestry | class | skill | general | bonus
+  category: string; // ancestry | class | skill | general | bonus | feature
   level: number;
   allowed: boolean;
   dmApproved: boolean;
   note: string;
   archetype?: string[];
+  granted?: boolean;
 }
 
 /** Fuente de conjuros adicional (p. ej. dedicación a clase caster), separada del lanzamiento de clase. */
@@ -175,6 +176,7 @@ export interface Character {
   ancestry: { uid: string | null; name: string; hp: number; speed: number; size: string; custom: boolean };
   heritage: { uid: string | null; name: string };
   background: { uid: string | null; name: string };
+  deity: { uid: string | null; name: string };
   clazz: {
     uid: string | null;
     name: string;
@@ -264,6 +266,7 @@ export function defaultCharacter(): Character {
     ancestry: { uid: null, name: "", hp: 8, speed: 25, size: "Medium", custom: false },
     heritage: { uid: null, name: "" },
     background: { uid: null, name: "" },
+    deity: { uid: null, name: "" },
     clazz: {
       uid: null, name: "", keyAbility: "str", hpPerLevel: 8,
       isCaster: false, castingType: "spontaneous", tradition: "arcane", isPsionic: false,

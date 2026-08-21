@@ -2,7 +2,7 @@ import { useState } from "react";
 import { api } from "../api";
 import { UpdateFn } from "../pages/Sheet";
 import { Section, Modal, CatalogSearch, AllowedBadge, PipTracker, Teml } from "../components/common";
-import { AonMarkdown } from "../lib/markdown";
+import { AonMarkdown, HouseRuleMarkdown } from "../lib/markdown";
 import { fmt, maxSpellRank, spellAttack, spellDc, extraSpellAttack, extraSpellDc } from "../lib/calc";
 import { syncFeatEffects } from "../lib/rules";
 import { Character, ExtraCaster, KnownSpell } from "../types";
@@ -11,7 +11,7 @@ type AddTarget = { composition?: boolean; focus?: boolean; cantrip?: boolean; ca
 
 export default function SpellsTab({ c, update }: { c: Character; update: UpdateFn }) {
   const [adding, setAdding] = useState<null | AddTarget>(null);
-  const [detail, setDetail] = useState<{ name: string; md: string } | null>(null);
+  const [detail, setDetail] = useState<{ name: string; md: string; house?: boolean; statblock?: Record<string, string>; traits?: string[] } | null>(null);
   const sc = c.spellcasting;
   const extraCasters = c.extraCasters ?? [];
 
@@ -29,7 +29,17 @@ export default function SpellsTab({ c, update }: { c: Character; update: UpdateF
   const showDetail = async (s: KnownSpell) => {
     if (!s.uid) return;
     const it = await api.item(s.uid);
-    setDetail({ name: s.name, md: String(it.markdown ?? "") });
+    const traits = Array.isArray(it.trait) ? it.trait as string[] : [];
+    const statblock = (it.statblock && typeof it.statblock === "object")
+      ? it.statblock as Record<string, string>
+      : undefined;
+    setDetail({
+      name: s.name,
+      md: String(it.markdown ?? ""),
+      house: Boolean(it.house),
+      statblock,
+      traits,
+    });
   };
 
   const updateSpell = (idx: number, patch: Partial<KnownSpell>) =>
@@ -264,7 +274,25 @@ export default function SpellsTab({ c, update }: { c: Character; update: UpdateF
 
       {detail && (
         <Modal title={detail.name} onClose={() => setDetail(null)}>
-          <AonMarkdown md={detail.md} />
+          {detail.house ? (
+            <div>
+              <div className="row" style={{ marginBottom: 6 }}>
+                {(detail.traits || []).map((t) => <span key={t} className="trait-chip">{t}</span>)}
+              </div>
+              {detail.statblock && Object.keys(detail.statblock).length > 0 && (
+                <table className="power-statblock">
+                  <tbody>
+                    {Object.entries(detail.statblock).filter(([, v]) => v).map(([k, v]) => (
+                      <tr key={k}><th>{k}</th><td>{v}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              <HouseRuleMarkdown md={detail.md} />
+            </div>
+          ) : (
+            <AonMarkdown md={detail.md} />
+          )}
         </Modal>
       )}
     </>

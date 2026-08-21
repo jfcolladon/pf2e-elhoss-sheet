@@ -95,7 +95,30 @@ export const api = {
   deleteCharacter(id: number): Promise<{ ok: boolean }> {
     return send("DELETE", `/characters/${id}`);
   },
-  health(): Promise<{ status: string; version: string; auth_required: boolean }> {
+  health(): Promise<{ status: string; version: string; auth_required: boolean; auth_multi?: boolean }> {
     return get(`/health`);
+  },
+  progression(params: { class_name?: string; ancestry?: string; level: number; custom_ancestry?: boolean; deity?: string }): Promise<{
+    features: { uid: string; name: string; level: number; kind: string; note: string }[];
+  }> {
+    const qs = new URLSearchParams();
+    if (params.class_name) qs.set("class_name", params.class_name);
+    if (params.ancestry) qs.set("ancestry", params.ancestry);
+    qs.set("level", String(params.level));
+    if (params.custom_ancestry) qs.set("custom_ancestry", "true");
+    if (params.deity) qs.set("deity", params.deity);
+    return get(`/progression?${qs}`);
+  },
+  register(body: { email: string; username: string; password: string }): Promise<{ ok: boolean; email: string }> {
+    return send("POST", `/auth/register`, body);
+  },
+  verifyOtp(body: { email: string; code: string }): Promise<{ ok: boolean; token: string; username: string }> {
+    return send("POST", `/auth/verify`, body);
+  },
+  loginAccount(body: { username: string; password: string }): Promise<{ ok: boolean; token: string; username: string }> {
+    return send("POST", `/auth/login`, body);
+  },
+  resendOtp(email: string): Promise<{ ok: boolean }> {
+    return send("POST", `/auth/resend-otp`, { email });
   },
 };

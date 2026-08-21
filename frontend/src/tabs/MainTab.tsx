@@ -7,7 +7,7 @@ import {
   strikeAttack, strikeDamageBonus, profBonus,
 } from "../lib/calc";
 import { ABILITY_LABELS, AbilityKey, Character, Strike } from "../types";
-import { applyClassSelection, applyMuseSelection, isBard, needsSecondMuse } from "../lib/rules";
+import { applyClassSelection, applyMuseSelection, isBard, isDivineDevotee, needsSecondMuse } from "../lib/rules";
 import { encodePortrait } from "../lib/portrait";
 import { ALLOWED_SOURCES_SHORT } from "../lib/sources";
 import {
@@ -20,7 +20,7 @@ const ABILITIES: AbilityKey[] = ["str", "dex", "con", "int", "wis", "cha"];
 export default function MainTab({ c, update }: { c: Character; update: UpdateFn }) {
   const [armorModal, setArmorModal] = useState(false);
   const [weaponModal, setWeaponModal] = useState(false);
-  const [pick, setPick] = useState<null | "ancestry" | "heritage" | "background" | "class" | "muse">(null);
+  const [pick, setPick] = useState<null | "ancestry" | "heritage" | "background" | "class" | "muse" | "deity">(null);
 
   useEffect(() => {
     if (needsSecondMuse(c)) setPick("muse");
@@ -40,7 +40,10 @@ export default function MainTab({ c, update }: { c: Character; update: UpdateFn 
               <input type="number" value={c.xp} onChange={(e) => update((o) => ({ ...o, xp: +e.target.value }))} /></div>
             <div className="field"><label>Nivel</label>
               <input type="number" min={1} max={20} value={c.level}
-                onChange={(e) => update((o) => ({ ...o, level: Math.max(1, Math.min(20, +e.target.value)) }))} /></div>
+                onChange={(e) => {
+                  const level = Math.max(1, Math.min(20, +e.target.value));
+                  update((o) => ({ ...o, level }));
+                }} /></div>
             <div className="field"><label>Ancestry</label>
               <div className="row">
                 <input style={{ flex: 1 }} value={c.ancestry.name} onChange={(e) => update((o) => ({ ...o, ancestry: { ...o.ancestry, name: e.target.value } }))} />
@@ -93,6 +96,15 @@ export default function MainTab({ c, update }: { c: Character; update: UpdateFn 
                     <button className="small ghost" onClick={() => setPick("muse")}>Cambiar</button>
                   </div>
                 )}
+              </div>
+            )}
+            {(isDivineDevotee(c.clazz.name) || c.deity?.name) && (
+              <div className="field" style={{ gridColumn: "1 / -1" }}>
+                <label>Doctrina / deidad</label>
+                <div className="row">
+                  <input style={{ flex: 1 }} value={c.deity?.name ?? ""} onChange={(e) => update((o) => ({ ...o, deity: { uid: o.deity?.uid ?? null, name: e.target.value } }))} />
+                  <button className="small ghost" onClick={() => setPick("deity")}>Elegir</button>
+                </div>
               </div>
             )}
             <div className="field"><label>Atributo clave</label>
@@ -324,7 +336,7 @@ export default function MainTab({ c, update }: { c: Character; update: UpdateFn 
         <Modal
           title={`Elegir ${{
             ancestry: "ancestry", heritage: "heritage", background: "background",
-            class: "clase", muse: "musa del bardo",
+            class: "clase", muse: "musa del bardo", deity: "doctrina / deidad",
           }[pick]}`}
           onClose={() => {
             if (pick === "muse" && needsSecondMuse(c)) return;
@@ -351,6 +363,29 @@ export default function MainTab({ c, update }: { c: Character; update: UpdateFn 
                   }));
                   setPick(null);
                   if (isBard(item.name)) setTimeout(() => setPick("muse"), 0);
+                }}
+              />
+            </>
+          )}
+          {pick === "deity" && (
+            <>
+              <h4>Doctrinas de Elhoss</h4>
+              <HouseRulePicker
+                kind="deity"
+                pickLabel="Elegir"
+                onPick={(entry) => {
+                  update((o) => ({ ...o, deity: { uid: null, name: entry.title } }));
+                  setPick(null);
+                }}
+              />
+              <h4 style={{ marginTop: 12 }}>SRD legacy ({ALLOWED_SOURCES_SHORT})</h4>
+              <CatalogSearch
+                type="deity"
+                dmMode={c.dmMode}
+                pickLabel="Elegir"
+                onPick={(item) => {
+                  update((o) => ({ ...o, deity: { uid: item.uid, name: item.name } }));
+                  setPick(null);
                 }}
               />
             </>

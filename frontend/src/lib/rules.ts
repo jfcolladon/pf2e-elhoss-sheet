@@ -53,6 +53,12 @@ export function isBard(name: string): boolean {
   return name.toLowerCase().includes("bard");
 }
 
+export function isDivineDevotee(name: string): boolean {
+  const low = name.toLowerCase();
+  return low.includes("cleric") || low.includes("clérigo") || low.includes("clerigo")
+    || low.includes("champion") || low.includes("oracle") || low.includes("oráculo");
+}
+
 /** Slots de conjuro de clase principal (simplificado CRB legacy). */
 export function primaryClassSlots(level: number, type: "prepared" | "spontaneous"): Record<number, number> {
   const maxRank = Math.min(10, Math.ceil(level / 2));
@@ -441,4 +447,25 @@ export function syncFeatEffects(c: Character): Character {
   }
 
   return applyMuseSkills(out);
+}
+
+export function mergeGrantedFeatures(
+  c: Character,
+  items: { uid: string; name: string; level: number; note: string }[],
+): Character {
+  const keep = c.feats.filter((f) => !f.granted);
+  const have = new Set(keep.map((f) => f.name.toLowerCase()));
+  const granted = items
+    .filter((it) => !have.has(it.name.toLowerCase()))
+    .map((it) => ({
+      uid: it.uid,
+      name: it.name,
+      category: "feature",
+      level: it.level,
+      allowed: true,
+      dmApproved: false,
+      note: it.note || "Otorgado por progresión",
+      granted: true,
+    }));
+  return { ...c, feats: [...keep, ...granted] };
 }

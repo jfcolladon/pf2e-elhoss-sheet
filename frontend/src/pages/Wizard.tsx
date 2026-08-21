@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { mod, fmt } from "../lib/calc";
 import { applyClassSelection, applyMuseSelection, isBard } from "../lib/rules";
+import { withProgression } from "../lib/progress";
 import { languagesFromAncestryData, parseLanguageList, withAncestryLanguages } from "../lib/languages";
 import { ALLOWED_SOURCES_SHORT } from "../lib/sources";
 import { Section, CatalogSearch, AllowedBadge } from "../components/common";
@@ -334,9 +335,10 @@ export default function Wizard() {
             pickLabel="Elegir"
             onPick={async (item) => {
               const full = await api.item(item.uid);
-              setC((old) => applyClassSelection(old, {
+              const next = applyClassSelection(c, {
                 name: item.name, uid: item.uid, hpPerLevel: Number(full.hp ?? 8),
-              }));
+              });
+              setC(await withProgression(next));
               setShowMusePicker(isBard(item.name));
             }}
           />
@@ -498,16 +500,12 @@ function PsionicClassPicker({
           key={d.name}
           className={c.clazz.isPsionic && c.psionics.discipline === d.name ? "" : "ghost"}
           title={d.foco}
-          onClick={() => {
+          onClick={async () => {
             const key = d.key_ability as AbilityKey;
-            setC((old) => ({
-              ...old,
-              clazz: {
-                uid: null, name: "Psiónico", keyAbility: key, hpPerLevel: 8,
-                isCaster: false, castingType: "spontaneous", tradition: "", isPsionic: true,
-              },
-              psionics: { ...old.psionics, enabled: true, mode: "class", discipline: d.name, keyAbility: key },
-            }));
+            const next = applyClassSelection(c, { name: "Psiónico" });
+            next.psionics = { ...next.psionics, enabled: true, mode: "class", discipline: d.name, keyAbility: key };
+            next.clazz = { ...next.clazz, keyAbility: key, isPsionic: true };
+            setC(await withProgression(next));
             applyBoost(key, +2);
           }}
         >

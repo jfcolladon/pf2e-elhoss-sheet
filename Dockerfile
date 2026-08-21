@@ -11,16 +11,17 @@ FROM python:3.12-slim AS seed
 WORKDIR /app
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+COPY backend/app/__init__.py backend/app/db.py backend/app/allowed_sources.py ./backend/app/
+COPY backend/etl/__init__.py backend/etl/seed_aon.py ./backend/etl/
+ENV DB_PATH=/seed/app.db
+RUN mkdir -p /seed && python backend/etl/seed_aon.py
 COPY backend/ ./backend/
 # copia local del doc de house rules como fallback si Google no responde
 COPY data/houserules.txt ./data/houserules.txt
 COPY data/elhoss-houserules.docx ./data/elhoss-houserules.docx
-ENV DB_PATH=/seed/app.db
 ENV HOUSERULES_TXT=/app/data/houserules.txt
 ENV HOUSERULES_DOCX=/app/data/elhoss-houserules.docx
-RUN mkdir -p /seed \
-    && python backend/etl/seed_aon.py \
-    && python backend/etl/seed_houserules.py
+RUN python backend/etl/seed_houserules.py
 
 # ---------- Etapa 3: imagen final ----------
 FROM python:3.12-slim
