@@ -1,6 +1,5 @@
 import json
 import os
-import re
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,12 +11,12 @@ from .auth import AUTH_MULTI, AUTH_USER, BasicAuthMiddleware, auth_required
 from .db import get_conn, init_db
 from .progression import granted_features
 from .users import (
-    consume_otp, create_session, create_unverified_user, ensure_legacy_user,
-    get_user_by_email, get_user_by_username, mark_verified, send_otp_email,
-    store_otp, verify_password,
+    create_player_user, create_session, ensure_users,
+    get_user_by_email, get_user_by_username, is_admin, list_users,
+    user_role, verify_password,
 )
 
-app = FastAPI(title="Hoja de Personaje PF2e - Elhoss", version="1.10.2")
+app = FastAPI(title="Hoja de Personaje PF2e - Elhoss", version="1.11.0")
 
 _cors = os.environ.get("CORS_ORIGINS", "*").strip()
 _cors_origins = ["*"] if _cors == "*" else [o.strip() for o in _cors.split(",") if o.strip()]
@@ -30,7 +29,7 @@ app.add_middleware(
 app.add_middleware(BasicAuthMiddleware)
 
 init_db()
-ensure_legacy_user()
+ensure_users()
 
 TYPE_ALIASES = {
     "ancestry": "ancestry", "heritage": "heritage", "background": "background",
@@ -42,8 +41,7 @@ TYPE_ALIASES = {
 }
 
 
-def re_email(email: str) -> bool:
-    return bool(re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email))
+
 
 
 def _normalize_prereq(raw) -> str:
@@ -260,7 +258,7 @@ def _actor(request: Request):
 
 def _can_access_row(request: Request, user_id) -> bool:
     user = _actor(request)
-    if not user or user.get("is_legacy"):
+    if not AUTH_MULTI or not user:
         return True
     return user_id == user["id"]
 
@@ -269,7 +267,7 @@ def _can_access_row(request: Request, user_id) -> bool:
 def list_characters(request: Request):
     conn = get_conn()
     user = _actor(request)
-    if user and not user.get("is_legacy"):
+    if AUTH_MULTI and user:
         rows = conn.execute(
             "SELECT id, name, data, updated_at FROM characters WHERE user_id=? ORDER BY updated_at DESC",
             (user["id"],),
@@ -438,60 +436,23 @@ def progression(
     return {"features": items}
 
 
-@app.post("/api/v1/auth/register")
-def auth_register(payload: dict):
-    if not AUTH_MULTI:
-        raise HTTPException(404, "Registro no habilitado")
-    email = str(payload.get("email") or "").strip().lower()
-    username = str(payload.get("username") or "").strip()
-    password = str(payload.get("password") or "")
-    if not re_email(email):
-        raise HTTPException(400, "Email invalido")
-    if len(username) < 3 or not re.match(r"^[a-zA-Z0-9._-]{3,32}$", username):
-        raise HTTPException(400, "Usuario: 3-32 letras, numeros, punto, _ o -")
-    if username.lower() == AUTH_USER.lower():
-        raise HTTPException(400, "Ese usuario ya existe")
-    if len(password) < 8:
-        raise HTTPException(400, "La contraseña debe tener al menos 8 caracteres")
-    if get_user_by_email(email) or get_user_by_username(username):
-        raise HTTPException(400, "Email o usuario ya registrado")
-    create_unverified_user(email, username, password)
-    code = store_otp(email, "register")
-    try:
-        send_otp_email(email, code)
-    except Exception as e:  # noqa: BLE001
-        raise HTTPException(503, f"No se pudo enviar el correo: {e}") from e
-    return {"ok": True, "email": email}
+def _public_user(user: dict) -> dict:
+    return {"username": user["username"], "role": user_role(user)}
 
 
-@app.post("/api/v1/auth/resend-otp")
-def auth_resend(payload: dict):
-    if not AUTH_MULTI:
-        raise HTTPException(404, "Registro no habilitado")
-    email = str(payload.get("email") or "").strip().lower()
-    user = get_user_by_email(email)
-    if not user or user.get("email_verified"):
-        return {"ok": True}
-    code = store_otp(email, "register")
-    try:
-        send_otp_email(email, code)
-    except Exception as e:  # noqa: BLE001
-        raise HTTPException(503, f"No se pudo enviar el correo: {e}") from e
-    return {"ok": True}
+def _require_admin(request: Request) -> dict:
+    user = _actor(request)
+    if not AUTH_MULTI or not is_admin(user):
+        raise HTTPException(403, "Solo un administrador puede gestionar usuarios")
+    return user
 
 
-@app.post("/api/v1/auth/verify")
-def auth_verify(payload: dict):
-    if not AUTH_MULTI:
-        raise HTTPException(404, "Registro no habilitado")
-    email = str(payload.get("email") or "").strip().lower()
-    code = str(payload.get("code") or "").strip()
-    if not consume_otp(email, code, "register"):
-        raise HTTPException(400, "Codigo invalido o vencido")
-    mark_verified(email)
-    user = get_user_by_email(email)
-    token = create_session(user["id"])
-    return {"ok": True, "token": token, "username": user["username"]}
+@app.get("/api/v1/auth/me")
+def auth_me(request: Request):
+    user = _actor(request)
+    if not user:
+        return {"username": None, "role": None}
+    return _public_user(user)
 
 
 @app.post("/api/v1/auth/login")
@@ -504,7 +465,30 @@ def auth_login(payload: dict):
     if not user or not user.get("email_verified") or not verify_password(password, user["password_hash"]):
         raise HTTPException(401, "Usuario o contraseña incorrectos")
     token = create_session(user["id"])
-    return {"ok": True, "token": token, "username": user["username"]}
+    return {"ok": True, "token": token, **_public_user(user)}
+
+
+@app.get("/api/v1/admin/users")
+def admin_list_users(request: Request):
+    _require_admin(request)
+    return [{"username": u["username"], "role": user_role(u), "created_at": u.get("created_at")} for u in list_users()]
+
+
+@app.post("/api/v1/admin/users")
+def admin_create_user(payload: dict, request: Request):
+    _require_admin(request)
+    username = str(payload.get("username") or "").strip()
+    password = str(payload.get("password") or "")
+    role = str(payload.get("role") or "user").strip().lower() or "user"
+    if username.lower() == AUTH_USER.lower():
+        raise HTTPException(400, "No se puede recrear el usuario de campana desde aqui")
+    if get_user_by_username(username):
+        raise HTTPException(400, "Ese usuario ya existe")
+    try:
+        user = create_player_user(username, password, role)
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+    return {"ok": True, "username": user["username"], "role": user_role(user)}
 
 
 @app.get("/api/v1/allowed-sources")

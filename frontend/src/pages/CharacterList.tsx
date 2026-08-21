@@ -19,7 +19,7 @@ export default function CharacterList() {
       </div>
       {loading && <p>Cargando…</p>}
       {!loading && chars.length === 0 && (
-        <p>No hay personajes todavía. Crea el primero con el asistente (incluye las house rules de Elhoss: tiradas 4d6 y wild talents).</p>
+        <p>No hay personajes en tu cuenta. Crea el primero con el asistente (incluye las house rules de Elhoss: tiradas 4d6 y wild talents).</p>
       )}
       <div className="grid cols-3">
         {chars.map((c) => (

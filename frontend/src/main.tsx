@@ -4,6 +4,7 @@ import { HashRouter, Route, Routes } from "react-router-dom";
 import App from "./App";
 import AuthGate from "./AuthGate";
 import CharacterList from "./pages/CharacterList";
+import UsersAdmin from "./pages/UsersAdmin";
 import Wizard from "./pages/Wizard";
 import Sheet from "./pages/Sheet";
 import "./styles.css";
@@ -17,6 +18,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route index element={<CharacterList />} />
             <Route path="new" element={<Wizard />} />
             <Route path="c/:id" element={<Sheet />} />
+            <Route path="users" element={<UsersAdmin />} />
           </Route>
         </Routes>
       </HashRouter>

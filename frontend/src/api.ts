@@ -98,6 +98,18 @@ export const api = {
   health(): Promise<{ status: string; version: string; auth_required: boolean; auth_multi?: boolean }> {
     return get(`/health`);
   },
+  me(): Promise<{ username: string | null; role: string | null }> {
+    return get(`/auth/me`);
+  },
+  loginAccount(body: { username: string; password: string }): Promise<{ ok: boolean; token: string; username: string; role: string }> {
+    return send("POST", `/auth/login`, body);
+  },
+  adminUsers(): Promise<{ username: string; role: string; created_at?: string }[]> {
+    return get(`/admin/users`);
+  },
+  createUser(body: { username: string; password: string; role?: "user" | "admin" }): Promise<{ ok: boolean; username: string; role: string }> {
+    return send("POST", `/admin/users`, body);
+  },
   progression(params: { class_name?: string; ancestry?: string; level: number; custom_ancestry?: boolean; deity?: string }): Promise<{
     features: { uid: string; name: string; level: number; kind: string; note: string }[];
   }> {
@@ -108,17 +120,5 @@ export const api = {
     if (params.custom_ancestry) qs.set("custom_ancestry", "true");
     if (params.deity) qs.set("deity", params.deity);
     return get(`/progression?${qs}`);
-  },
-  register(body: { email: string; username: string; password: string }): Promise<{ ok: boolean; email: string }> {
-    return send("POST", `/auth/register`, body);
-  },
-  verifyOtp(body: { email: string; code: string }): Promise<{ ok: boolean; token: string; username: string }> {
-    return send("POST", `/auth/verify`, body);
-  },
-  loginAccount(body: { username: string; password: string }): Promise<{ ok: boolean; token: string; username: string }> {
-    return send("POST", `/auth/login`, body);
-  },
-  resendOtp(email: string): Promise<{ ok: boolean }> {
-    return send("POST", `/auth/resend-otp`, { email });
   },
 };

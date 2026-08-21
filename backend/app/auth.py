@@ -2,7 +2,7 @@
 
 Produccion:
 - AUTH_PASSWORD: HTTP Basic del usuario legado (elhoss).
-- AUTH_MULTI=1: ademas, registro por email+OTP y sesiones Bearer.
+- AUTH_MULTI=1: cuentas user/admin y sesiones Bearer. Sin registro publico.
 """
 from __future__ import annotations
 
@@ -20,10 +20,7 @@ AUTH_MULTI = os.environ.get("AUTH_MULTI", "").strip() in {"1", "true", "yes"}
 
 OPEN_PATHS = frozenset({
     "/api/v1/health",
-    "/api/v1/auth/register",
-    "/api/v1/auth/verify",
     "/api/v1/auth/login",
-    "/api/v1/auth/resend-otp",
 })
 
 

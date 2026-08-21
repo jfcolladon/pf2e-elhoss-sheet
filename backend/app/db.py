@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     is_legacy INTEGER NOT NULL DEFAULT 0,
     email_verified INTEGER NOT NULL DEFAULT 0,
+    role TEXT NOT NULL DEFAULT 'user',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -113,6 +114,9 @@ def init_db(conn: sqlite3.Connection | None = None):
     cols = {r[1] for r in conn.execute("PRAGMA table_info(characters)").fetchall()}
     if "user_id" not in cols:
         conn.execute("ALTER TABLE characters ADD COLUMN user_id INTEGER")
+    user_cols = {r[1] for r in conn.execute("PRAGMA table_info(users)").fetchall()}
+    if user_cols and "role" not in user_cols:
+        conn.execute("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'")
     conn.commit()
     if own:
         conn.close()

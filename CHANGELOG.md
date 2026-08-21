@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.11.0] — 2026-08-21
+
+### Cambiado
+- Dos roles: **usuario** (solo sus hojas) y **administrador** (crear cuentas; no ve ni edita hojas ajenas).
+- Sin registro público. `elhoss` queda como usuario común. Las hojas sin dueño pasan a `elhoss`.
+
+## [1.10.3] — 2026-08-21
+
+### Cambiado
+- Registro multi-tenant: solo usuario y contraseña. Sin correo, sin OTP y sin SMTP en el contenedor.
+
 ## [1.10.2] — 2026-08-21
 
 ### Corregido

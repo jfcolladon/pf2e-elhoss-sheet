@@ -1,20 +1,24 @@
-"""Usuarios, OTP por email y sesiones. Solo activo si AUTH_MULTI=1 (produccion)."""
+"""Usuarios y sesiones. Solo activo si AUTH_MULTI=1 (produccion).
+
+Roles: user (hoja propia) y admin (crear usuarios; hoja propia, nunca las ajenas).
+Sin registro publico ni SMTP.
+"""
 from __future__ import annotations
 
 import hashlib
 import hmac
 import os
+import re
 import secrets
-import smtplib
 from datetime import datetime, timedelta, timezone
-from email.message import EmailMessage
 
 from .db import get_conn
 
 AUTH_MULTI = os.environ.get("AUTH_MULTI", "").strip() in {"1", "true", "yes"}
-OTP_MINUTES = 15
 SESSION_DAYS = 30
 PBKDF2_ROUNDS = 120_000
+USERNAME_RE = re.compile(r"^[a-zA-Z0-9._-]{3,32}$")
+ROLES = frozenset({"user", "admin"})
 
 
 def _now() -> datetime:
@@ -38,12 +42,19 @@ def verify_password(password: str, stored: str) -> bool:
     return hmac.compare_digest(hash_password(password, salt), stored)
 
 
-def hash_otp(code: str) -> str:
-    return hashlib.sha256(code.encode("utf-8")).hexdigest()
+def user_role(user: dict | None) -> str:
+    if not user:
+        return "user"
+    role = str(user.get("role") or "user").lower()
+    return role if role in ROLES else "user"
 
 
-def ensure_legacy_user() -> None:
-    """Crea el usuario elhoss (login existente) si falta."""
+def is_admin(user: dict | None) -> bool:
+    return user_role(user) == "admin"
+
+
+def ensure_users() -> None:
+    """elhoss queda como usuario comun; hojas huerfanas pasan a elhoss."""
     if not AUTH_MULTI:
         return
     from .auth import AUTH_PASSWORD, AUTH_USER
@@ -52,12 +63,29 @@ def ensure_legacy_user() -> None:
     conn = get_conn()
     row = conn.execute("SELECT id FROM users WHERE username=?", (AUTH_USER,)).fetchone()
     if not row:
-        email = os.environ.get("LEGACY_USER_EMAIL", f"{AUTH_USER}@elhoss.local")
+        email = f"{AUTH_USER}@elhoss.local"
         conn.execute(
-            "INSERT INTO users (email, username, password_hash, is_legacy, email_verified) VALUES (?,?,?,?,1)",
-            (email.lower(), AUTH_USER, hash_password(AUTH_PASSWORD), 1),
+            "INSERT INTO users (email, username, password_hash, is_legacy, email_verified, role) "
+            "VALUES (?,?,?,?,1,'user')",
+            (email.lower(), AUTH_USER, hash_password(AUTH_PASSWORD), 0),
         )
-        conn.commit()
+    else:
+        conn.execute(
+            "UPDATE users SET is_legacy=0, role='user', email_verified=1, password_hash=? WHERE username=?",
+            (hash_password(AUTH_PASSWORD), AUTH_USER),
+        )
+    conn.execute("UPDATE users SET is_legacy=0 WHERE is_legacy!=0")
+    conn.execute(
+        "UPDATE users SET role='user' WHERE role IS NULL OR role='' OR (username=? AND role!='user')",
+        (AUTH_USER,),
+    )
+    owner = conn.execute("SELECT id FROM users WHERE username=?", (AUTH_USER,)).fetchone()
+    if owner:
+        conn.execute(
+            "UPDATE characters SET user_id=? WHERE user_id IS NULL",
+            (owner["id"],),
+        )
+    conn.commit()
     conn.close()
 
 
@@ -75,76 +103,71 @@ def get_user_by_email(email: str):
     return dict(row) if row else None
 
 
-def get_user(user_id: int):
+def list_users() -> list[dict]:
     conn = get_conn()
-    row = conn.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
+    rows = conn.execute(
+        "SELECT id, username, role, created_at FROM users ORDER BY username"
+    ).fetchall()
     conn.close()
-    return dict(row) if row else None
+    return [dict(r) for r in rows]
 
 
-def create_unverified_user(email: str, username: str, password: str) -> None:
+def create_player_user(username: str, password: str, role: str = "user") -> dict:
+    username = username.strip()
+    role = (role or "user").lower()
+    if role not in ROLES:
+        raise ValueError("Rol invalido")
+    if not USERNAME_RE.match(username):
+        raise ValueError("Usuario: 3-32 letras, numeros, punto, _ o -")
+    if len(password) < 8:
+        raise ValueError("La contraseña debe tener al menos 8 caracteres")
+    email = f"{username.lower()}@players.elhoss.local"
     conn = get_conn()
     conn.execute(
-        "INSERT INTO users (email, username, password_hash, is_legacy, email_verified) VALUES (?,?,?,?,0)",
-        (email.lower().strip(), username.strip(), hash_password(password), 0),
+        "INSERT INTO users (email, username, password_hash, is_legacy, email_verified, role) "
+        "VALUES (?,?,?,?,1,?)",
+        (email, username, hash_password(password), 0, role),
     )
     conn.commit()
+    row = conn.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
     conn.close()
+    return dict(row)
 
 
-def mark_verified(email: str) -> None:
+def upsert_user(username: str, password: str, role: str = "user") -> dict:
+    existing = get_user_by_username(username)
+    if not existing:
+        return create_player_user(username, password, role)
+    role = (role or "user").lower()
+    if role not in ROLES:
+        raise ValueError("Rol invalido")
     conn = get_conn()
-    conn.execute("UPDATE users SET email_verified=1 WHERE email=?", (email.lower().strip(),))
-    conn.commit()
-    conn.close()
-
-
-def store_otp(email: str, purpose: str) -> str:
-    code = f"{secrets.randbelow(1_000_000):06d}"
-    expires = _now() + timedelta(minutes=OTP_MINUTES)
-    conn = get_conn()
-    conn.execute("UPDATE otp_codes SET used=1 WHERE email=? AND purpose=? AND used=0", (email.lower(), purpose))
     conn.execute(
-        "INSERT INTO otp_codes (email, code_hash, purpose, expires_at) VALUES (?,?,?,?)",
-        (email.lower().strip(), hash_otp(code), purpose, _iso(expires)),
+        "UPDATE users SET password_hash=?, role=?, is_legacy=0, email_verified=1 WHERE username=?",
+        (hash_password(password), role, username.strip()),
     )
     conn.commit()
+    row = conn.execute("SELECT * FROM users WHERE username=?", (username.strip(),)).fetchone()
     conn.close()
-    return code
-
-
-def consume_otp(email: str, code: str, purpose: str) -> bool:
-    conn = get_conn()
-    row = conn.execute(
-        "SELECT id, code_hash, expires_at FROM otp_codes WHERE email=? AND purpose=? AND used=0 ORDER BY id DESC LIMIT 1",
-        (email.lower().strip(), purpose),
-    ).fetchone()
-    if not row:
-        conn.close()
-        return False
-    if row["expires_at"] < _iso(_now()):
-        conn.close()
-        return False
-    if not hmac.compare_digest(row["code_hash"], hash_otp(code.strip())):
-        conn.close()
-        return False
-    conn.execute("UPDATE otp_codes SET used=1 WHERE id=?", (row["id"],))
-    conn.commit()
-    conn.close()
-    return True
+    return dict(row)
 
 
 def create_session(user_id: int) -> str:
     token = secrets.token_urlsafe(32)
     expires = _now() + timedelta(days=SESSION_DAYS)
     conn = get_conn()
-    conn.execute("INSERT INTO sessions (token, user_id, expires_at) VALUES (?,?,?)", (token, user_id, _iso(expires)))
+    conn.execute(
+        "INSERT INTO sessions (user_id, token, expires_at) VALUES (?,?,?)",
+        (user_id, token, _iso(expires)),
+    )
     conn.commit()
     conn.close()
     return token
 
 
 def user_from_token(token: str):
+    if not token:
+        return None
     conn = get_conn()
     row = conn.execute(
         "SELECT u.* FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token=? AND s.expires_at>=?",
@@ -154,24 +177,6 @@ def user_from_token(token: str):
     return dict(row) if row else None
 
 
-def send_otp_email(to_email: str, code: str) -> None:
-    host = os.environ.get("SMTP_HOST", "").strip()
-    port = int(os.environ.get("SMTP_PORT", "587") or "587")
-    user = os.environ.get("SMTP_USER", "").strip()
-    password = os.environ.get("SMTP_PASSWORD", "").strip()
-    sender = os.environ.get("SMTP_FROM", user or "noreply@elhoss.local").strip()
-    if not host or not password:
-        raise RuntimeError("SMTP no configurado (SMTP_HOST / SMTP_PASSWORD)")
-    msg = EmailMessage()
-    msg["Subject"] = "Codigo de verificacion — Elhoss"
-    msg["From"] = sender
-    msg["To"] = to_email
-    msg.set_content(
-        f"Tu codigo de verificacion es: {code}\n\n"
-        f"Caduca en {OTP_MINUTES} minutos. Si no creaste una cuenta, ignora este mensaje.\n"
-    )
-    with smtplib.SMTP(host, port, timeout=30) as smtp:
-        smtp.starttls()
-        if user:
-            smtp.login(user, password)
-        smtp.send_message(msg)
+# compat con imports previos
+def ensure_legacy_user() -> None:
+    ensure_users()
