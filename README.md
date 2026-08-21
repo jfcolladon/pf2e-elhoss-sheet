@@ -146,7 +146,7 @@ Todo contenido cuyo origen en [Archives of Nethys](https://2e.aonprd.com/) (lega
 | Guns & Gears | Gunslinger, inventors, armas de fuego… |
 | Secrets of Magic | Summoner, magus, rituales… |
 
-PDFs de referencia: [carpeta Rulebooks en Google Drive](https://drive.google.com/drive/u/0/folders/1CveoM7PWlSF8GWE16UltayP_3SzYLin_).
+PDFs de referencia: [carpeta Rulebooks en Google Drive](https://drive.google.com/drive/folders/15Hg8lcA7y3jxECDA1TpW9bgdUGfgwFvL?usp=sharing).
 
 Tras actualizar la app, **reconstruí Docker** para re-sembrar el catálogo con los nuevos `allowed`:
 

@@ -1,7 +1,7 @@
 """Manuales autorizados para la campaña (nombres en AoN legacy, minusculas).
 
 Corresponden a los PDFs en:
-https://drive.google.com/drive/u/0/folders/1CveoM7PWlSF8GWE16UltayP_3SzYLin_
+https://drive.google.com/drive/folders/15Hg8lcA7y3jxECDA1TpW9bgdUGfgwFvL?usp=sharing
 """
 
 # Nombres exactos tal como aparecen en el campo `source` de Archives of Nethys (legacy).

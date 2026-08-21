@@ -144,7 +144,7 @@
 
 ### Añadido
 - **10 manuales autorizados** (sin aprobación DM): Core Rulebook, Advanced Player's Guide, Bestiary 1–3, Book of the Dead, Dark Archive, Gamemastery Guide, Guns & Gears, Secrets of Magic.
-- Lista alineada con la [carpeta de rulebooks de la campaña](https://drive.google.com/drive/u/0/folders/1CveoM7PWlSF8GWE16UltayP_3SzYLin_).
+- Lista alineada con la [carpeta de rulebooks de la campaña](https://drive.google.com/drive/folders/15Hg8lcA7y3jxECDA1TpW9bgdUGfgwFvL?usp=sharing).
 - Endpoint `GET /api/v1/allowed-sources` y sección en pestaña Reglas.
 - Tipo `ritual` en el catálogo (Secrets of Magic).
 

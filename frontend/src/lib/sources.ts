@@ -15,4 +15,4 @@ export const ALLOWED_SOURCE_LABELS = [
 export const ALLOWED_SOURCES_SHORT = "CRB · APG · Bestiary 1–3 · Book of the Dead · Dark Archive · GMG · Guns & Gears · Secrets of Magic";
 
 export const ALLOWED_SOURCES_DRIVE =
-  "https://drive.google.com/drive/u/0/folders/1CveoM7PWlSF8GWE16UltayP_3SzYLin_";
+  "https://drive.google.com/drive/folders/15Hg8lcA7y3jxECDA1TpW9bgdUGfgwFvL?usp=sharing";

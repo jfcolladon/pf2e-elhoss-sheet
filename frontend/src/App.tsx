@@ -30,9 +30,11 @@ export default function App() {
           {ALLOWED_SOURCES_SHORT} + House Rules · v{APP_VERSION}
         </span>
         <div className="spacer" />
-        <Link to="/">Personajes</Link>
-        <Link to="/new">+ Nuevo</Link>
-        {isAdmin ? <Link to="/users">Usuarios</Link> : null}
+        <nav className="topbar-nav">
+          <Link to="/">Personajes</Link>
+          <Link to="/new">+ Nuevo</Link>
+          {isAdmin ? <Link to="/users">Usuarios</Link> : null}
+        </nav>
         {username ? <span className="muted" style={{ color: "#d8c9a3" }}>{username}</span> : null}
         {hasStoredAuth() ? (
           <button type="button" className="ghost" onClick={logout} style={{ color: "#f3e6c8", borderColor: "#d8c9a3" }}>

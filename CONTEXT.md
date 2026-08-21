@@ -28,7 +28,7 @@ Hoja de personaje interactiva para **Pathfinder Segunda Edición (legacy)** usad
 |--------|-----|
 | [Archives of Nethys legacy](https://2e.aonprd.com) | SRD vía Elasticsearch en `elasticsearch.aonprd.com:9200` |
 | [House rules Google Doc](https://docs.google.com/document/d/16EmEq9_nEYG6o5xgtyvk1wodVfFIUD4E9Yf4qJuQLkM/edit) | Psiónica, wild talents, ancestries custom Elhoss |
-| [Manuales autorizados (Drive)](https://drive.google.com/drive/u/0/folders/1CveoM7PWlSF8GWE16UltayP_3SzYLin_) | CRB · APG · Bestiary 1-3 · Book of the Dead · Dark Archive · GMG · Guns & Gears · Secrets of Magic |
+| [Manuales autorizados (Drive)](https://drive.google.com/drive/folders/15Hg8lcA7y3jxECDA1TpW9bgdUGfgwFvL?usp=sharing) | CRB · APG · Bestiary 1-3 · Book of the Dead · Dark Archive · GMG · Guns & Gears · Secrets of Magic |
 
 Todo contenido fuera de esos manuales aparece como "No permitido" con checkbox de aprobación DM.
 
@@ -317,7 +317,7 @@ cd backend && uvicorn app.main:app --reload  # requiere: pip install -r requirem
 - **Jugador / autor:** jfcolladon (GitHub: `jfcolladon`)
 - **Personaje activo:** Bardo con Dedication a Clérigo, Multifarious Muse
 - **House rules doc:** https://docs.google.com/document/d/16EmEq9_nEYG6o5xgtyvk1wodVfFIUD4E9Yf4qJuQLkM/edit
-- **Drive manuales:** https://drive.google.com/drive/u/0/folders/1CveoM7PWlSF8GWE16UltayP_3SzYLin_
+- **Drive manuales:** https://drive.google.com/drive/folders/15Hg8lcA7y3jxECDA1TpW9bgdUGfgwFvL?usp=sharing
 
 ---
 
